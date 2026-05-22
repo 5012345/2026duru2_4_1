@@ -17,7 +17,7 @@
 
   <!-- 헤더 -->
   <header class="w-full max-w-4xl flex justify-between items-center py-4 border-b border-slate-700 mb-6">
-    <h1 class="text-2xl font-bold text-sky-400">비밀번호 마피아 <span class="text-sm text-slate-400">v2.5 (실시간 동기화 완벽 패치)</span></h1>
+    <h1 class="text-2xl font-bold text-sky-400">비밀번호 마피아 <span class="text-sm text-slate-400">v2.6 (태블릿 실시간 연동 패치)</span></h1>
     <div id="user-info" class="text-sm font-medium text-slate-300 hidden">
       접속: <span id="my-name" class="text-white"></span> (<span id="my-role" class="text-emerald-400"></span>)
     </div>
@@ -27,14 +27,12 @@
   <main id="screen-login" class="w-full max-w-md bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700">
     <h2 class="text-xl font-bold mb-6 text-center">게임 접속</h2>
     
-    <!-- 학생 접속 -->
     <div class="mb-6 pb-6 border-b border-slate-700">
       <label class="block text-sm mb-2">학생 이름</label>
       <input type="text" id="login-name" class="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white mb-4" placeholder="이름을 입력하세요">
       <button onclick="joinGame()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded transition">게임 참가 (최대 9명)</button>
     </div>
 
-    <!-- 관리자 접속 -->
     <div>
       <label class="block text-sm mb-2 text-slate-400">관리자 (공용 모니터 띄우기용)</label>
       <input type="password" id="login-admin-pw" class="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white mb-4" placeholder="관리자 비밀번호를 입력하세요">
@@ -47,9 +45,7 @@
     <h2 class="text-2xl font-bold mb-2">대기실 (역할 선택)</h2>
     <p class="text-slate-400 mb-6">원하는 특수 능력을 읽어보고 선택하세요. 한 명당 하나의 역할만 가능합니다.</p>
     
-    <div id="roles-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <!-- 역할 카드들이 JS로 생성됨 -->
-    </div>
+    <div id="roles-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
     
     <div class="text-center mt-8">
       <p class="text-yellow-400 animate-pulse" id="waiting-msg">관리자가 게임을 시작할 때까지 대기해주세요...</p>
@@ -60,9 +56,7 @@
   <main id="screen-admin" class="w-full max-w-4xl bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 hidden mb-6">
     <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
       <h2 class="text-2xl font-bold text-rose-400">교실 중앙 컨트롤 패널</h2>
-      <div class="text-sm text-slate-400">
-        시스템이 자동으로 정답을 숨기고 채점합니다.
-      </div>
+      <div class="text-sm text-slate-400">시스템이 자동으로 정답을 숨기고 채점합니다.</div>
     </div>
     
     <div class="grid grid-cols-2 gap-4 mb-6">
@@ -179,61 +173,91 @@
       useFirebase = true;
     }
 
-    // 플레이어 데이터를 DB나 로컬에 저장하여 관리자 화면에 즉시 띄움
-    function syncPlayersToAdmin() {
-      if (useFirebase) {
-        db.collection("mafia_rooms").doc("room1").set({ players: gameState.players }, { merge: true });
-      } else {
-        localStorage.setItem("mafia_players", JSON.stringify(gameState.players));
-      }
-      if (isAdmin) updateAdminPlayerList();
-    }
-
-    // 초기 실행 시 동기화 리스너 작동 (관리자가 학생들 접속을 볼 수 있게)
-    function initSyncListener() {
-      if (useFirebase) {
-        db.collection("mafia_rooms").doc("room1").onSnapshot(doc => {
-          if (doc.exists) {
-            gameState.players = doc.data().players || {};
-            if (isAdmin) updateAdminPlayerList();
-          }
-        });
-      } else {
-        window.addEventListener("storage", (e) => {
-          if (e.key === "mafia_players") {
-            gameState.players = JSON.parse(e.newValue || "{}");
-            if (isAdmin) updateAdminPlayerList();
-          }
-        });
-        // 탭 새로고침 시 기존 데이터 불러오기
-        let saved = localStorage.getItem("mafia_players");
-        if (saved) gameState.players = JSON.parse(saved);
-      }
-    }
-    
-    // 프로그램 시작 시 동기화 리스너 즉시 실행
-    initSyncListener();
-
-    // ==========================================
-    // 1. 상태 변수 및 초기화 설정
-    // ==========================================
+    // 1. 상태 변수 설정
     let gameState = {
       round: 0,
       stage: 'LOBBY', 
       secretPassword: "",
-      timer: 0,
-      players: {}, 
-      hintsData: []
+      hintsData: [],
+      players: {}
     };
     let myPlayer = { name: "", role: "", isAI: false };
     let isAdmin = false;
     let timerInterval = null;
 
-    // [수정2] 정보원 아이콘을 '검은 선글라스를 쓴 캐릭터(😎)'로 변경
+    // [학생용] 점수 및 직업 선택만 DB에 저장 (관리자 권한 침범 방지)
+    function syncPlayerState() {
+      if (useFirebase) {
+        db.collection("mafia_rooms").doc("room1").set({ players: gameState.players }, { merge: true });
+      } else {
+        let saved = JSON.parse(localStorage.getItem("mafia_gameState") || "{}");
+        saved.players = gameState.players;
+        localStorage.setItem("mafia_gameState", JSON.stringify(saved));
+      }
+    }
+
+    // [관리자용] 다음 라운드/스테이지 전환 전체 정보를 DB에 덮어쓰기 (학생 기기 조종)
+    function syncGameStateFromAdmin() {
+      if (useFirebase) {
+        db.collection("mafia_rooms").doc("room1").set(gameState, { merge: true });
+      } else {
+        localStorage.setItem("mafia_gameState", JSON.stringify(gameState));
+      }
+    }
+
+    // ★ 학생들의 기기가 DB 변화를 실시간으로 감지하고 화면을 넘기는 핵심 리스너 ★
+    function initSyncListener() {
+      if (useFirebase) {
+        db.collection("mafia_rooms").doc("room1").onSnapshot(doc => {
+          if (doc.exists) handleSyncData(doc.data());
+        });
+      } else {
+        window.addEventListener("storage", (e) => {
+          if (e.key === "mafia_gameState") handleSyncData(JSON.parse(e.newValue || "{}"));
+        });
+        let saved = localStorage.getItem("mafia_gameState");
+        if (saved) handleSyncData(JSON.parse(saved));
+      }
+    }
+
+    // 데이터 변경 시 화면 처리 (학생, 관리자 공통)
+    function handleSyncData(data) {
+      if (!data) return;
+
+      let oldStage = gameState.stage;
+      let oldRound = gameState.round;
+
+      gameState.players = data.players || {};
+      if (data.secretPassword) gameState.secretPassword = data.secretPassword;
+      if (data.hintsData) gameState.hintsData = data.hintsData;
+      
+      // 관리자가 DB의 Stage를 바꾸었을 때 감지하여 학생들 화면 전환
+      if (data.stage && data.round !== undefined) {
+        gameState.stage = data.stage;
+        gameState.round = data.round;
+
+        // 내가 학생(참가자)이고, 스테이지가 LOBBY에서 시작되었거나 변경되었다면 트리거 발동
+        if (!isAdmin && (oldStage !== data.stage || oldRound !== data.round)) {
+           if (data.stage === 'LOBBY') {
+              resetToLobbyLocal(); // 초기화면 강제 복귀
+           } else {
+              triggerStageClient(data.stage); // 해당 스테이지(문제풀이, 추리 등) 화면 띄우고 타이머 시작
+           }
+        }
+      }
+
+      if (isAdmin) updateAdminPlayerList();
+    }
+    
+    initSyncListener(); // 프로그램 시작 시 리스너 가동
+
+    // ==========================================
+    // 2. 직업 리스트 및 게임 제어 (UI)
+    // ==========================================
     const ROLE_DETAILS = [
       { name: "예언가", icon: "🔮", desc: "다음 라운드 우승자를 예측하여 성공 시 추가 추리 기회 획득" },
       { name: "탐정", icon: "🕵️", desc: "게임 중 단 세 번, 추가 힌트 열람" },
-      { name: "정보원", icon: "😎", desc: "1라운드 시작 시 비밀번호에 없는 숫자 2개 획득" },
+      { name: "정보원", icon: "😎", desc: "1라운드 시작 시 비밀번호에 없는 숫자 2개 획득" }, // 선글라스 적용
       { name: "닥터 스트레인지", icon: "🌀", desc: "단 한 번, 이전 우승자의 힌트와 제출 기록 열람" },
       { name: "훼방꾼", icon: "💥", desc: "단 한 번, 우승자의 추리 기회를 강탈 (본인 3회 추리)" },
       { name: "시간도둑", icon: "⏱️", desc: "매 라운드 다른 사람보다 5초 먼저 문제풀이 시작" },
@@ -242,9 +266,6 @@
       { name: "도박사", icon: "🎲", desc: "단 한 번 배팅, 배팅 라운드 우승 시 정답 숫자 1개 획득" }
     ];
 
-    // ==========================================
-    // 정답 맞춤형 동적 힌트 생성기
-    // ==========================================
     function generateLogicalHints(secretStr) {
       const digits = secretStr.split('').map(Number);
       const evens = digits.filter(n => n % 2 === 0).length;
@@ -253,7 +274,6 @@
       const max = Math.max(...digits);
       const min = Math.min(...digits);
       const primes = digits.filter(n => [2,3,5,7].includes(n)).length;
-      
       let notInPassword = [0,1,2,3,4,5,6,7,8,9].find(n => !digits.includes(n));
 
       let hints = [
@@ -271,9 +291,6 @@
       return hints.sort(() => Math.random() - 0.5);
     }
 
-    // ==========================================
-    // 2. 로그인, AI 추가, 게임 재시작
-    // ==========================================
     function loginAdmin() {
       const pw = document.getElementById('login-admin-pw').value;
       if (pw === "2525") {
@@ -285,12 +302,10 @@
         digits.sort(() => Math.random() - 0.5);
         if(digits[0] === '0') { [digits[0], digits[1]] = [digits[1], digits[0]]; }
         gameState.secretPassword = digits.slice(0, 4).join('');
-        
         gameState.hintsData = generateLogicalHints(gameState.secretPassword);
-        updateAdminPlayerList(); // 로그인 시 현재까지 접속한 학생들 즉시 로드
-      } else {
-        alert("비밀번호가 틀렸습니다.");
-      }
+        
+        syncGameStateFromAdmin(); // 초기 관리자 정보 세팅
+      } else { alert("비밀번호가 틀렸습니다."); }
     }
 
     function joinGame() {
@@ -310,30 +325,20 @@
         const btn = document.createElement('div');
         btn.className = "group flex flex-col items-center bg-slate-700 hover:bg-slate-600 border border-slate-600 p-5 rounded-xl cursor-pointer transition text-center shadow-md";
         btn.onclick = () => selectRole(role.name);
-        
-        btn.innerHTML = `
-          <div class="text-5xl mb-3 group-hover:scale-110 transition-transform">${role.icon}</div>
-          <h3 class="text-xl font-bold text-sky-300 mb-2">${role.name}</h3>
-          <p class="text-xs text-slate-300 leading-relaxed">${role.desc}</p>
-        `;
+        btn.innerHTML = `<div class="text-5xl mb-3 group-hover:scale-110 transition-transform">${role.icon}</div><h3 class="text-xl font-bold text-sky-300 mb-2">${role.name}</h3><p class="text-xs text-slate-300 leading-relaxed">${role.desc}</p>`;
         grid.appendChild(btn);
       });
     }
 
-    // [수정1] 역할 선택 시 관리자 화면으로 실시간 데이터 전송
     function selectRole(roleName) {
       myPlayer.role = roleName;
       document.getElementById('my-name').innerText = myPlayer.name;
       document.getElementById('my-role').innerText = myPlayer.role;
       document.getElementById('user-info').classList.remove('hidden');
-      document.getElementById('roles-grid').innerHTML = `
-        <div class="col-span-1 md:col-span-3 text-center p-8 bg-slate-900 border border-emerald-500 rounded-xl shadow-lg">
-          <div class="text-3xl text-emerald-400 font-bold mb-2">✅ [${roleName}] 선택 완료!</div>
-          <p class="text-slate-300 mt-2">곧 게임이 시작됩니다. 교실 화면을 주목하세요.</p>
-        </div>
-      `;
+      document.getElementById('roles-grid').innerHTML = `<div class="col-span-1 md:col-span-3 text-center p-8 bg-slate-900 border border-emerald-500 rounded-xl shadow-lg"><div class="text-3xl text-emerald-400 font-bold mb-2">✅ [${roleName}] 선택 완료!</div><p class="text-slate-300 mt-2">곧 게임이 시작됩니다. 교실 화면을 주목하세요.</p></div>`;
+      
       gameState.players[myPlayer.name] = { role: roleName, score: 0, isAI: false, deductionAttempts: 1 };
-      syncPlayersToAdmin(); // 데이터 동기화 발동
+      syncPlayerState(); // 학생 데이터만 DB에 추가 (Broadcast)
     }
 
     function fillWithAI() {
@@ -347,8 +352,8 @@
         let role = ROLE_DETAILS[currentCount + i]?.name || "시민";
         gameState.players[botNames[i]] = { role: role, score: 0, isAI: true, deductionAttempts: 1 };
       }
-      alert(`${needed}명의 AI가 추가되었습니다.\n(AI는 문제풀이에서 무조건 0점을 받아 학생들의 우승을 방해하지 않습니다.)`);
-      syncPlayersToAdmin(); // 봇 추가도 동기화 발동
+      alert(`${needed}명의 AI가 추가되었습니다.`);
+      syncPlayerState();
     }
 
     function updateAdminPlayerList() {
@@ -361,30 +366,8 @@
       });
     }
 
-    function resetToLobby() {
-      gameState.round = 0;
-      gameState.stage = 'LOBBY';
-      gameState.players = {};
-      myPlayer = { name: "", role: "", isAI: false };
-      
-      syncPlayersToAdmin(); // 초기화 데이터 동기화
-      
-      clearInterval(timerInterval);
-      document.getElementById('screen-game').classList.add('hidden');
-      document.getElementById('stage-gameover').classList.add('hidden');
-      document.getElementById('user-info').classList.add('hidden');
-      document.getElementById('screen-admin').classList.add('hidden');
-      document.getElementById('screen-lobby').classList.add('hidden');
-      document.getElementById('screen-login').classList.remove('hidden');
-      
-      document.getElementById('login-name').value = '';
-      document.getElementById('login-admin-pw').value = '';
-      document.getElementById('admin-round-info').innerText = '대기 중';
-      document.getElementById('admin-next-btn').innerText = '1라운드 시작하기';
-    }
-
     // ==========================================
-    // 3. 문제 생성기
+    // 3. 문제 생성 및 타이머
     // ==========================================
     function generateMathProblems() {
       const problems = [];
@@ -413,18 +396,13 @@
     function renderProblems() {
       const list = document.getElementById('problem-list');
       list.innerHTML = '';
-      const problems = generateMathProblems();
-      window.currentProblems = problems; 
-
-      problems.forEach(p => {
+      window.currentProblems = generateMathProblems();
+      window.currentProblems.forEach(p => {
         let inputHtml = p.type === 'ox' ? `<input type="number" id="prob-${p.num}" class="w-20 p-2 rounded bg-slate-900 border text-center" placeholder="1=O, 2=X">` : `<input type="number" id="prob-${p.num}" class="w-24 p-2 rounded bg-slate-900 border text-center" placeholder="정답">`;
         list.innerHTML += `<div class="flex items-center justify-between bg-slate-700 p-3 rounded"><span class="font-bold text-sky-300 w-8">${p.num}.</span><span class="flex-1 px-4">${p.text}</span>${inputHtml}</div>`;
       });
     }
 
-    // ==========================================
-    // 4. 타이머 및 화면 컨트롤 
-    // ==========================================
     function startTimer(seconds, onComplete) {
       clearInterval(timerInterval);
       gameState.timer = seconds;
@@ -446,35 +424,35 @@
       ['stage-problem', 'stage-problem-result', 'stage-deduction', 'stage-prep', 'stage-gameover'].forEach(id => document.getElementById(id).classList.add('hidden'));
     }
 
+    // ==========================================
+    // 4. 스테이지 관리 (관리자 제어)
+    // ==========================================
     function adminStartNextStage() {
       if (gameState.round >= 10 && gameState.stage === 'PREP') {
         gameState.stage = 'GAMEOVER';
         document.getElementById('admin-round-info').innerText = `게임 종료`;
         document.getElementById('admin-next-btn').innerText = "결과창 띄우기";
-        setTimeout(() => triggerStageClient('GAMEOVER'), 500);
-        return;
       }
-
-      if (gameState.stage === 'LOBBY' || gameState.stage === 'PREP') {
+      else if (gameState.stage === 'LOBBY' || gameState.stage === 'PREP') {
         gameState.round++;
         gameState.stage = 'PROBLEM';
         document.getElementById('admin-round-info').innerText = `Round ${gameState.round} - 문제풀이 (1분)`;
         document.getElementById('admin-next-btn').innerText = "문제풀이 조기 종료";
-        if(!isAdmin) return;
-        setTimeout(() => triggerStageClient('PROBLEM'), 500); 
       } 
       else if (gameState.stage === 'PROBLEM' || gameState.stage === 'PROBLEM_RESULT') {
         gameState.stage = 'DEDUCTION';
         document.getElementById('admin-round-info').innerText = `Round ${gameState.round} - 추리 (2분)`;
         document.getElementById('admin-next-btn').innerText = "추리 조기 종료";
-        setTimeout(() => triggerStageClient('DEDUCTION'), 500);
       }
       else if (gameState.stage === 'DEDUCTION') {
         gameState.stage = 'PREP';
         document.getElementById('admin-round-info').innerText = `Round ${gameState.round} - 정비 (30초)`;
         document.getElementById('admin-next-btn').innerText = gameState.round >= 10 ? "최종 결과 보기" : "다음 라운드 시작";
-        setTimeout(() => triggerStageClient('PREP'), 500);
       }
+
+      // ★ 관리자가 버튼을 누르면 이 함수가 DB를 업데이트하고, 학생들 태블릿 화면이 일제히 넘어감 ★
+      syncGameStateFromAdmin();
+      triggerStageClient(gameState.stage); // 관리자 본인 뷰에도 적용
     }
 
     function triggerStageClient(stage) {
@@ -491,7 +469,6 @@
       else if (stage === 'PROBLEM') {
         document.getElementById('game-stage-display').innerText = "문제풀이 스테이지";
         document.getElementById('stage-problem').classList.remove('hidden');
-        
         document.getElementById('btn-submit-problems').innerText = "정답 제출하기";
         document.getElementById('btn-submit-problems').disabled = false;
         document.getElementById('btn-submit-problems').classList.replace('bg-slate-600', 'bg-sky-500');
@@ -513,67 +490,49 @@
         
         let myScore = gameState.players[myPlayer.name]?.score || 0;
         let hintsUl = document.getElementById('deduction-hints');
-        
         let currentHint = gameState.hintsData[gameState.round - 1];
 
-        if (myScore === 9) { 
-          hintsUl.innerHTML = `<li>${currentHint}</li>`;
-        } else {
-          hintsUl.innerHTML = `<li class="text-rose-400 font-bold">❌ 해독(문제풀이)에 실패하여 힌트를 획득하지 못했습니다.</li>`;
-        }
+        if (myScore === 9) hintsUl.innerHTML = `<li>${currentHint}</li>`;
+        else hintsUl.innerHTML = `<li class="text-rose-400 font-bold">❌ 해독에 실패하여 힌트를 획득하지 못했습니다.</li>`;
 
         if (myPlayer.role === '정보원' && gameState.round === 1) {
           let available = ['0','1','2','3','4','5','6','7','8','9'].filter(n => !gameState.secretPassword.includes(n));
           available.sort(() => Math.random() - 0.5);
           let notInPw = available.slice(0, 2).join(', ');
-          
-          const infoDiv = document.getElementById('informant-message');
-          infoDiv.innerHTML = `😎 [정보원 발동] 정답에 들어가지 않는 숫자: <span class="text-white text-2xl ml-2 tracking-widest">[ ${notInPw} ]</span>`;
-          infoDiv.classList.remove('hidden');
-          alert(`[정보원 능력]\n정답에 절대 포함되지 않는 숫자는 [${notInPw}] 입니다.`);
+          document.getElementById('informant-message').innerHTML = `😎 [정보원 발동] 정답에 없는 숫자: <span class="text-white text-2xl tracking-widest">[ ${notInPw} ]</span>`;
+          document.getElementById('informant-message').classList.remove('hidden');
         }
         
-        startTimer(120, () => { if(isAdmin) adminStartNextStage(); });
+        startTimer(120, () => { if(isAdmin) adminStartNextStage(); }); // 자동 넘김은 관리자만 제어
       }
       else if (stage === 'PREP') {
         document.getElementById('game-stage-display').innerText = "정비시간 스테이지";
         document.getElementById('stage-prep').classList.remove('hidden');
         setupPrepUI();
-        startTimer(30, () => { if(isAdmin) adminStartNextStage(); });
+        startTimer(30, () => { if(isAdmin) adminStartNextStage(); }); // 자동 넘김은 관리자만 제어
       }
     }
 
     // ==========================================
-    // 5. 점수 채점 및 제출
+    // 5. 제출 로직
     // ==========================================
     function submitProblems() {
       if (myPlayer.isAI) return;
-      
       let score = 0;
-      window.currentProblems.forEach(p => {
-        const val = document.getElementById(`prob-${p.num}`).value;
-        if (val === p.answer) score++;
-      });
+      window.currentProblems.forEach(p => { if (document.getElementById(`prob-${p.num}`).value === p.answer) score++; });
       document.getElementById('btn-submit-problems').innerText = "제출 완료! 대기 중...";
       document.getElementById('btn-submit-problems').disabled = true;
       document.getElementById('btn-submit-problems').classList.replace('bg-sky-500', 'bg-slate-600');
       
       gameState.players[myPlayer.name].score = score;
-      syncPlayersToAdmin(); // 점수 기록 후 동기화
+      syncPlayerState();
     }
 
     function handleProblemEnd() {
       hideAllStages();
       document.getElementById('stage-problem-result').classList.remove('hidden');
-      
-      if (gameState.players[myPlayer.name]) {
-        if (gameState.players[myPlayer.name].isAI) {
-            gameState.players[myPlayer.name].score = 0;
-        }
-      }
-
-      let myScore = gameState.players[myPlayer.name]?.score || 0;
-      document.getElementById('my-score').innerText = myScore;
+      if (gameState.players[myPlayer.name] && gameState.players[myPlayer.name].isAI) gameState.players[myPlayer.name].score = 0;
+      document.getElementById('my-score').innerText = gameState.players[myPlayer.name]?.score || 0;
       document.getElementById('round-winner').innerText = "집계 로직 진행 중 (서버 연동 필요)";
     }
 
@@ -586,27 +545,19 @@
       let matchedIndices = new Set();
 
       for(let i=0; i<4; i++) {
-        if(inputArr[i] === secArr[i]) {
-          resultArr[i] = `${inputArr[i]}:A`;
-          matchedIndices.add(i);
-        }
+        if(inputArr[i] === secArr[i]) { resultArr[i] = `${inputArr[i]}:A`; matchedIndices.add(i); }
       }
       for(let i=0; i<4; i++) {
         if(!resultArr[i]) {
           let foundB = false;
           for(let j=0; j<4; j++) {
-            if(!matchedIndices.has(j) && inputArr[i] === secArr[j]) {
-              resultArr[i] = `${inputArr[i]}:B`;
-              matchedIndices.add(j); 
-              foundB = true; break;
-            }
+            if(!matchedIndices.has(j) && inputArr[i] === secArr[j]) { resultArr[i] = `${inputArr[i]}:B`; matchedIndices.add(j); foundB = true; break; }
           }
           if(!foundB) resultArr[i] = `${inputArr[i]}:C`;
         }
       }
 
-      const resultStr = resultArr.join(', ');
-      document.getElementById('deduction-results-list').innerHTML += `<li class="bg-slate-800 p-2 rounded">입력: [${input}] ➔ <span class="text-sky-300">${resultStr}</span></li>`;
+      document.getElementById('deduction-results-list').innerHTML += `<li class="bg-slate-800 p-2 rounded">입력: [${input}] ➔ <span class="text-sky-300">${resultArr.join(', ')}</span></li>`;
       document.getElementById('deduction-results-area').classList.remove('hidden');
       document.getElementById('deduction-input').value = "";
       
@@ -623,12 +574,36 @@
     function setupPrepUI() {
       const area = document.getElementById('prep-ability-area');
       area.innerHTML = '';
-      if (myPlayer.role === '예언가') {
-        area.innerHTML = `<h4 class="text-lg font-bold text-sky-400 mb-2">예언가</h4><select class="p-2 rounded bg-slate-800 text-white"><option>참가자 선택</option></select><button class="ml-2 bg-sky-600 px-4 py-2 rounded">예언 확정</button>`;
-      } else if (['훼방꾼', '도박사'].includes(myPlayer.role)) {
-        area.innerHTML = `<label class="flex items-center justify-center space-x-2"><input type="checkbox" class="w-6 h-6"><span class="text-lg">이번 라운드에 능력 사용</span></label>`;
-      } else {
-        area.innerHTML = `<p class="text-slate-400 py-4">다음 전략을 구상하세요.</p>`;
+      if (myPlayer.role === '예언가') area.innerHTML = `<h4 class="text-lg font-bold text-sky-400 mb-2">예언가</h4><select class="p-2 rounded bg-slate-800 text-white"><option>참가자 선택</option></select><button class="ml-2 bg-sky-600 px-4 py-2 rounded">예언 확정</button>`;
+      else if (['훼방꾼', '도박사'].includes(myPlayer.role)) area.innerHTML = `<label class="flex items-center justify-center space-x-2"><input type="checkbox" class="w-6 h-6"><span class="text-lg">이번 라운드에 능력 사용</span></label>`;
+      else area.innerHTML = `<p class="text-slate-400 py-4">다음 전략을 구상하세요.</p>`;
+    }
+
+    // ==========================================
+    // 6. 초기화
+    // ==========================================
+    function resetToLobby() {
+      gameState.round = 0;
+      gameState.stage = 'LOBBY';
+      gameState.players = {};
+      syncGameStateFromAdmin(); // DB를 LOBBY로 초기화 -> 학생들도 로비로 튕김
+      resetToLobbyLocal();
+    }
+
+    function resetToLobbyLocal() {
+      clearInterval(timerInterval);
+      myPlayer = { name: "", role: "", isAI: false };
+      document.getElementById('screen-game').classList.add('hidden');
+      document.getElementById('stage-gameover').classList.add('hidden');
+      document.getElementById('user-info').classList.add('hidden');
+      document.getElementById('screen-admin').classList.add('hidden');
+      document.getElementById('screen-lobby').classList.add('hidden');
+      document.getElementById('screen-login').classList.remove('hidden');
+      document.getElementById('login-name').value = '';
+      document.getElementById('login-admin-pw').value = '';
+      if(isAdmin) {
+         document.getElementById('admin-round-info').innerText = '대기 중';
+         document.getElementById('admin-next-btn').innerText = '1라운드 시작하기';
       }
     }
   </script>
