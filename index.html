@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>비밀번호 마피아 게임 (수학 추리)</title>
+  <title>비밀번호 레이스 (수학 추리)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Firebase SDK 라이브러리 추가 -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -16,10 +16,14 @@
 <body class="min-h-screen flex flex-col items-center p-4">
 
   <!-- 헤더 -->
-  <header class="w-full max-w-4xl flex justify-between items-center py-4 border-b border-slate-700 mb-6">
-    <h1 class="text-2xl font-bold text-sky-400">비밀번호 마피아 <span class="text-sm text-slate-400">v2.6 (태블릿 실시간 연동 패치)</span></h1>
-    <div id="user-info" class="text-sm font-medium text-slate-300 hidden">
-      접속: <span id="my-name" class="text-white"></span> (<span id="my-role" class="text-emerald-400"></span>)
+  <header class="w-full max-w-4xl flex justify-between items-start py-4 border-b border-slate-700 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-sky-400">비밀번호 레이스 <span class="text-sm text-slate-400">v2.7 (완벽 제어 패치)</span></h1>
+      <div id="network-status" class="inline-block mt-1 text-xs px-2 py-0.5 bg-rose-900 text-rose-300 rounded">오프라인 (API 키 미등록)</div>
+    </div>
+    <div id="user-info" class="text-sm font-medium text-slate-300 hidden text-right">
+      접속: <span id="my-name" class="text-white"></span><br>
+      <span id="my-role" class="text-emerald-400 font-bold"></span>
     </div>
   </header>
 
@@ -27,14 +31,16 @@
   <main id="screen-login" class="w-full max-w-md bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700">
     <h2 class="text-xl font-bold mb-6 text-center">게임 접속</h2>
     
+    <!-- 학생 접속 -->
     <div class="mb-6 pb-6 border-b border-slate-700">
       <label class="block text-sm mb-2">학생 이름</label>
       <input type="text" id="login-name" class="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white mb-4" placeholder="이름을 입력하세요">
       <button onclick="joinGame()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded transition">게임 참가 (최대 9명)</button>
     </div>
 
+    <!-- 관리자 접속 -->
     <div>
-      <label class="block text-sm mb-2 text-slate-400">관리자 (공용 모니터 띄우기용)</label>
+      <label class="block text-sm mb-2 text-slate-400">관리자 (교실 공용 모니터 띄우기용)</label>
       <input type="password" id="login-admin-pw" class="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white mb-4" placeholder="관리자 비밀번호를 입력하세요">
       <button onclick="loginAdmin()" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 rounded transition">관리자로 접속</button>
     </div>
@@ -45,7 +51,9 @@
     <h2 class="text-2xl font-bold mb-2">대기실 (역할 선택)</h2>
     <p class="text-slate-400 mb-6">원하는 특수 능력을 읽어보고 선택하세요. 한 명당 하나의 역할만 가능합니다.</p>
     
-    <div id="roles-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
+    <div id="roles-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <!-- 역할 카드들이 JS로 생성됨 -->
+    </div>
     
     <div class="text-center mt-8">
       <p class="text-yellow-400 animate-pulse" id="waiting-msg">관리자가 게임을 시작할 때까지 대기해주세요...</p>
@@ -56,20 +64,24 @@
   <main id="screen-admin" class="w-full max-w-4xl bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 hidden mb-6">
     <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
       <h2 class="text-2xl font-bold text-rose-400">교실 중앙 컨트롤 패널</h2>
-      <div class="text-sm text-slate-400">시스템이 자동으로 정답을 숨기고 채점합니다.</div>
+      <div class="text-sm text-slate-400">
+        시스템이 자동으로 정답을 숨기고 채점합니다.
+      </div>
     </div>
     
     <div class="grid grid-cols-2 gap-4 mb-6">
+      <!-- 접속자 리스트 -->
       <div class="bg-slate-900 p-4 rounded">
         <h3 class="font-bold text-sky-300 mb-2">현재 접속자 (최대 9명)</h3>
         <ul id="admin-player-list" class="text-sm space-y-2 text-slate-300 font-medium"></ul>
         <button onclick="fillWithAI()" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded text-sm transition">빈 자리 AI봇으로 채우기</button>
       </div>
       
+      <!-- 진행 제어 -->
       <div class="bg-slate-900 p-4 rounded flex flex-col justify-center items-center">
         <h3 class="font-bold text-yellow-300 mb-4 text-center">게임 진행 제어</h3>
         <div id="admin-round-info" class="text-xl mb-4 font-bold">대기 중</div>
-        <button onclick="adminStartNextStage()" id="admin-next-btn" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-4 rounded text-lg transition">
+        <button onclick="adminStartNextStage()" id="admin-next-btn" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-4 rounded text-lg transition shadow-lg">
           1라운드 시작하기
         </button>
       </div>
@@ -133,7 +145,7 @@
 
     <!-- 4-3. 정비 시간 스테이지 -->
     <div id="stage-prep" class="bg-slate-800 p-6 rounded-xl border border-slate-700 hidden">
-      <h3 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2 text-amber-400">정비 시간 (전략 및 정치)</h3>
+      <h3 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2 text-amber-400">정비 시간 (전략 및 능동)</h3>
       <p class="mb-4 text-slate-300">이전 라운드의 결과를 분석하고, 다음 라운드를 위한 특수 능력을 예약하세요.</p>
       <div id="prep-ability-area" class="bg-slate-900 p-6 rounded border border-slate-600 text-center"></div>
     </div>
@@ -159,18 +171,20 @@
 
     // ★★★ 여기에 선생님의 API 키를 입력하세요 ★★★
     const firebaseConfig = {
-        apiKey: "AIzaSyDX5TiB78wqtnzgwgOpfnEv7f0hcN0L4LU",
-        authDomain: "duru20401-b60fa.firebaseapp.com",
-        projectId: "duru20401-b60fa",
-        storageBucket: "duru20401-b60fa.firebasestorage.app",
-        messagingSenderId: "790407879385",
-        appId: "1:790407879385:web:c1bce54aa1d470951ebcc8"
+      apiKey: "AIzaSyDX5TiB78wqtnzgwgOpfnEv7f0hcN0L4LU",
+      authDomain: "duru20401-b60fa.firebaseapp.com",
+      projectId: "duru20401-b60fa",
+      storageBucket: "duru20401-b60fa.firebasestorage.app",
+      messagingSenderId: "790407879385",
+      appId: "1:790407879385:web:c1bce54aa1d470951ebcc8"
     };
 
     if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("API_KEY_입력")) {
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
       useFirebase = true;
+      document.getElementById('network-status').className = "inline-block mt-1 text-xs px-2 py-0.5 bg-emerald-900 text-emerald-300 rounded font-bold";
+      document.getElementById('network-status').innerText = "온라인 (실시간 DB 연동)";
     }
 
     // 1. 상태 변수 설정
@@ -185,42 +199,75 @@
     let isAdmin = false;
     let timerInterval = null;
 
-    // [학생용] 점수 및 직업 선택만 DB에 저장 (관리자 권한 침범 방지)
+    // [학생용] 점수 및 직업 선택만 DB의 본인 영역에 안전하게 저장
     function syncPlayerState() {
       if (useFirebase) {
-        db.collection("mafia_rooms").doc("room1").set({ players: gameState.players }, { merge: true });
+        db.collection("race_rooms").doc("room1").set({ 
+          players: { [myPlayer.name]: gameState.players[myPlayer.name] } 
+        }, { merge: true });
       } else {
-        let saved = JSON.parse(localStorage.getItem("mafia_gameState") || "{}");
-        saved.players = gameState.players;
-        localStorage.setItem("mafia_gameState", JSON.stringify(saved));
+        let saved = JSON.parse(localStorage.getItem("race_gameState") || "{}");
+        saved.players = saved.players || {};
+        saved.players[myPlayer.name] = gameState.players[myPlayer.name];
+        localStorage.setItem("race_gameState", JSON.stringify(saved));
       }
     }
 
-    // [관리자용] 다음 라운드/스테이지 전환 전체 정보를 DB에 덮어쓰기 (학생 기기 조종)
+    // [관리자용] 다음 라운드 전환 명령을 DB에 쏴줌 (학생 태블릿 제어)
     function syncGameStateFromAdmin() {
       if (useFirebase) {
-        db.collection("mafia_rooms").doc("room1").set(gameState, { merge: true });
+        db.collection("race_rooms").doc("room1").set({
+          stage: gameState.stage,
+          round: gameState.round,
+          secretPassword: gameState.secretPassword,
+          hintsData: gameState.hintsData
+        }, { merge: true });
       } else {
-        localStorage.setItem("mafia_gameState", JSON.stringify(gameState));
+        let saved = JSON.parse(localStorage.getItem("race_gameState") || "{}");
+        saved.stage = gameState.stage;
+        saved.round = gameState.round;
+        saved.secretPassword = gameState.secretPassword;
+        saved.hintsData = gameState.hintsData;
+        localStorage.setItem("race_gameState", JSON.stringify(saved));
       }
     }
 
-    // ★ 학생들의 기기가 DB 변화를 실시간으로 감지하고 화면을 넘기는 핵심 리스너 ★
+    // [관리자용] 특정 플레이어 퇴장 (DB에서 삭제)
+    function kickPlayer(pName) {
+      if (!isAdmin) return;
+      if (!confirm(`[${pName}] 참가자를 강제 퇴장시키겠습니까?`)) return;
+      
+      delete gameState.players[pName]; // 로컬 즉시 지우기
+      if (useFirebase) {
+        db.collection("race_rooms").doc("room1").set({
+          players: { [pName]: firebase.firestore.FieldValue.delete() }
+        }, { merge: true });
+      } else {
+        let saved = JSON.parse(localStorage.getItem("race_gameState") || "{}");
+        if(saved.players && saved.players[pName]) {
+          delete saved.players[pName];
+          localStorage.setItem("race_gameState", JSON.stringify(saved));
+        }
+      }
+      updateAdminPlayerList();
+    }
+
+    // ★ 학생들의 기기가 DB 변화를 감지하고 화면을 즉각 넘기는 핵심 리스너 ★
     function initSyncListener() {
       if (useFirebase) {
-        db.collection("mafia_rooms").doc("room1").onSnapshot(doc => {
+        db.collection("race_rooms").doc("room1").onSnapshot(doc => {
           if (doc.exists) handleSyncData(doc.data());
         });
       } else {
         window.addEventListener("storage", (e) => {
-          if (e.key === "mafia_gameState") handleSyncData(JSON.parse(e.newValue || "{}"));
+          if (e.key === "race_gameState") handleSyncData(JSON.parse(e.newValue || "{}"));
         });
-        let saved = localStorage.getItem("mafia_gameState");
+        let saved = localStorage.getItem("race_gameState");
         if (saved) handleSyncData(JSON.parse(saved));
       }
     }
 
-    // 데이터 변경 시 화면 처리 (학생, 관리자 공통)
+    // 데이터 수신 시 공통 처리
     function handleSyncData(data) {
       if (!data) return;
 
@@ -230,26 +277,34 @@
       gameState.players = data.players || {};
       if (data.secretPassword) gameState.secretPassword = data.secretPassword;
       if (data.hintsData) gameState.hintsData = data.hintsData;
-      
-      // 관리자가 DB의 Stage를 바꾸었을 때 감지하여 학생들 화면 전환
+
+      if (isAdmin) {
+        updateAdminPlayerList();
+      } else {
+        // [퇴장 감지] 내가 이름을 등록했는데, 서버 명단에서 사라졌다면 튕김 처리
+        if (myPlayer.name !== "" && !gameState.players[myPlayer.name]) {
+            alert("관리자에 의해 강제 퇴장되었거나 게임이 초기화되었습니다.");
+            resetToLobbyLocal();
+            return;
+        }
+      }
+
+      // 관리자가 Stage(스테이지)를 변경했을 때 태블릿 화면 동기화
       if (data.stage && data.round !== undefined) {
         gameState.stage = data.stage;
         gameState.round = data.round;
 
-        // 내가 학생(참가자)이고, 스테이지가 LOBBY에서 시작되었거나 변경되었다면 트리거 발동
         if (!isAdmin && (oldStage !== data.stage || oldRound !== data.round)) {
            if (data.stage === 'LOBBY') {
-              resetToLobbyLocal(); // 초기화면 강제 복귀
+              resetToLobbyLocal();
            } else {
-              triggerStageClient(data.stage); // 해당 스테이지(문제풀이, 추리 등) 화면 띄우고 타이머 시작
+              triggerStageClient(data.stage);
            }
         }
       }
-
-      if (isAdmin) updateAdminPlayerList();
     }
     
-    initSyncListener(); // 프로그램 시작 시 리스너 가동
+    initSyncListener();
 
     // ==========================================
     // 2. 직업 리스트 및 게임 제어 (UI)
@@ -257,7 +312,7 @@
     const ROLE_DETAILS = [
       { name: "예언가", icon: "🔮", desc: "다음 라운드 우승자를 예측하여 성공 시 추가 추리 기회 획득" },
       { name: "탐정", icon: "🕵️", desc: "게임 중 단 세 번, 추가 힌트 열람" },
-      { name: "정보원", icon: "😎", desc: "1라운드 시작 시 비밀번호에 없는 숫자 2개 획득" }, // 선글라스 적용
+      { name: "정보원", icon: "😎", desc: "1라운드 시작 시 비밀번호에 없는 숫자 2개 획득" },
       { name: "닥터 스트레인지", icon: "🌀", desc: "단 한 번, 이전 우승자의 힌트와 제출 기록 열람" },
       { name: "훼방꾼", icon: "💥", desc: "단 한 번, 우승자의 추리 기회를 강탈 (본인 3회 추리)" },
       { name: "시간도둑", icon: "⏱️", desc: "매 라운드 다른 사람보다 5초 먼저 문제풀이 시작" },
@@ -304,15 +359,21 @@
         gameState.secretPassword = digits.slice(0, 4).join('');
         gameState.hintsData = generateLogicalHints(gameState.secretPassword);
         
-        syncGameStateFromAdmin(); // 초기 관리자 정보 세팅
+        syncGameStateFromAdmin();
       } else { alert("비밀번호가 틀렸습니다."); }
     }
 
     function joinGame() {
       const name = document.getElementById('login-name').value.trim();
       if (!name) return alert("이름을 입력하세요.");
+      
       myPlayer.name = name;
       myPlayer.isAI = false;
+      myPlayer.role = "직업 선택 중..."; // [패치] 참가 즉시 대기실 명단에 올림
+      
+      gameState.players[myPlayer.name] = { role: myPlayer.role, score: 0, isAI: false, deductionAttempts: 1 };
+      syncPlayerState(); 
+
       document.getElementById('screen-login').classList.add('hidden');
       document.getElementById('screen-lobby').classList.remove('hidden');
       renderRoles();
@@ -338,7 +399,7 @@
       document.getElementById('roles-grid').innerHTML = `<div class="col-span-1 md:col-span-3 text-center p-8 bg-slate-900 border border-emerald-500 rounded-xl shadow-lg"><div class="text-3xl text-emerald-400 font-bold mb-2">✅ [${roleName}] 선택 완료!</div><p class="text-slate-300 mt-2">곧 게임이 시작됩니다. 교실 화면을 주목하세요.</p></div>`;
       
       gameState.players[myPlayer.name] = { role: roleName, score: 0, isAI: false, deductionAttempts: 1 };
-      syncPlayerState(); // 학생 데이터만 DB에 추가 (Broadcast)
+      syncPlayerState(); 
     }
 
     function fillWithAI() {
@@ -353,16 +414,23 @@
         gameState.players[botNames[i]] = { role: role, score: 0, isAI: true, deductionAttempts: 1 };
       }
       alert(`${needed}명의 AI가 추가되었습니다.`);
-      syncPlayerState();
+      syncGameStateFromAdmin(); // 봇 추가 후 전체 덮어쓰기 동기화
     }
 
     function updateAdminPlayerList() {
       const list = document.getElementById('admin-player-list');
       list.innerHTML = '';
       Object.keys(gameState.players).forEach(pName => {
-        let isBot = gameState.players[pName].isAI ? " <span class='text-xs bg-slate-700 px-1 rounded'>(AI)</span>" : "";
-        let roleIcon = ROLE_DETAILS.find(r => r.name === gameState.players[pName].role)?.icon || "👤";
-        list.innerHTML += `<li class="bg-slate-800 p-2 rounded mb-1 flex items-center"><span class="mr-2 text-lg">${roleIcon}</span> <span>${pName} ${isBot}</span></li>`;
+        let p = gameState.players[pName];
+        let isBot = p.isAI ? " <span class='text-xs bg-slate-700 px-1 rounded'>(AI)</span>" : "";
+        let roleIcon = ROLE_DETAILS.find(r => r.name === p.role)?.icon || "👤";
+        
+        list.innerHTML += `
+          <li class="bg-slate-800 p-2 rounded mb-1 flex items-center justify-between">
+            <div><span class="mr-2 text-lg">${roleIcon}</span> <span>${pName} ${isBot} <span class="text-emerald-400 text-xs ml-2">[${p.role}]</span></span></div>
+            <button onclick="kickPlayer('${pName}')" class="text-xs bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded transition">퇴장</button>
+          </li>
+        `;
       });
     }
 
@@ -450,9 +518,9 @@
         document.getElementById('admin-next-btn').innerText = gameState.round >= 10 ? "최종 결과 보기" : "다음 라운드 시작";
       }
 
-      // ★ 관리자가 버튼을 누르면 이 함수가 DB를 업데이트하고, 학생들 태블릿 화면이 일제히 넘어감 ★
+      // ★ 이 함수가 DB를 업데이트하면, 학생 태블릿의 리스너가 반응해 동시에 넘어감 ★
       syncGameStateFromAdmin();
-      triggerStageClient(gameState.stage); // 관리자 본인 뷰에도 적용
+      triggerStageClient(gameState.stage); // 관리자 화면도 동시 적용
     }
 
     function triggerStageClient(stage) {
@@ -503,13 +571,13 @@
           document.getElementById('informant-message').classList.remove('hidden');
         }
         
-        startTimer(120, () => { if(isAdmin) adminStartNextStage(); }); // 자동 넘김은 관리자만 제어
+        startTimer(120, () => { if(isAdmin) adminStartNextStage(); }); 
       }
       else if (stage === 'PREP') {
         document.getElementById('game-stage-display').innerText = "정비시간 스테이지";
         document.getElementById('stage-prep').classList.remove('hidden');
         setupPrepUI();
-        startTimer(30, () => { if(isAdmin) adminStartNextStage(); }); // 자동 넘김은 관리자만 제어
+        startTimer(30, () => { if(isAdmin) adminStartNextStage(); }); 
       }
     }
 
@@ -533,7 +601,7 @@
       document.getElementById('stage-problem-result').classList.remove('hidden');
       if (gameState.players[myPlayer.name] && gameState.players[myPlayer.name].isAI) gameState.players[myPlayer.name].score = 0;
       document.getElementById('my-score').innerText = gameState.players[myPlayer.name]?.score || 0;
-      document.getElementById('round-winner').innerText = "집계 로직 진행 중 (서버 연동 필요)";
+      document.getElementById('round-winner').innerText = "집계 로직 대기 완료 (가장 빨리, 많이 푼 학생)";
     }
 
     function submitDeduction() {
@@ -586,13 +654,21 @@
       gameState.round = 0;
       gameState.stage = 'LOBBY';
       gameState.players = {};
-      syncGameStateFromAdmin(); // DB를 LOBBY로 초기화 -> 학생들도 로비로 튕김
+      
+      // DB를 완전히 비워서 학생 기기도 로비로 쫓겨나게 만듦
+      if (useFirebase) {
+        db.collection("race_rooms").doc("room1").set({ stage: 'LOBBY', round: 0, players: {} });
+      } else {
+        localStorage.setItem("race_gameState", "{}");
+      }
       resetToLobbyLocal();
     }
 
     function resetToLobbyLocal() {
       clearInterval(timerInterval);
       myPlayer = { name: "", role: "", isAI: false };
+      isAdmin = false;
+      
       document.getElementById('screen-game').classList.add('hidden');
       document.getElementById('stage-gameover').classList.add('hidden');
       document.getElementById('user-info').classList.add('hidden');
@@ -601,10 +677,6 @@
       document.getElementById('screen-login').classList.remove('hidden');
       document.getElementById('login-name').value = '';
       document.getElementById('login-admin-pw').value = '';
-      if(isAdmin) {
-         document.getElementById('admin-round-info').innerText = '대기 중';
-         document.getElementById('admin-next-btn').innerText = '1라운드 시작하기';
-      }
     }
   </script>
 </body>
