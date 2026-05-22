@@ -17,7 +17,7 @@
 
   <!-- 헤더 -->
   <header class="w-full max-w-4xl flex justify-between items-center py-4 border-b border-slate-700 mb-6">
-    <h1 class="text-2xl font-bold text-sky-400">비밀번호 마피아 <span class="text-sm text-slate-400">v2.3 (교실 모드 + DB 탑재)</span></h1>
+    <h1 class="text-2xl font-bold text-sky-400">비밀번호 마피아 <span class="text-sm text-slate-400">v2.4 (직업 UI 개편)</span></h1>
     <div id="user-info" class="text-sm font-medium text-slate-300 hidden">
       접속: <span id="my-name" class="text-white"></span> (<span id="my-role" class="text-emerald-400"></span>)
     </div>
@@ -37,18 +37,19 @@
     <!-- 관리자 접속 -->
     <div>
       <label class="block text-sm mb-2 text-slate-400">관리자 (공용 모니터 띄우기용)</label>
-      <input type="password" id="login-admin-pw" class="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white mb-4" placeholder="비밀번호 입력 (2525)">
+      <!-- [수정1] 힌트(2525) 텍스트 제거 -->
+      <input type="password" id="login-admin-pw" class="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white mb-4" placeholder="관리자 비밀번호를 입력하세요">
       <button onclick="loginAdmin()" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 rounded transition">관리자로 접속</button>
     </div>
   </main>
 
   <!-- 2. 대기실 (역할 선택) -->
   <main id="screen-lobby" class="w-full max-w-4xl bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 hidden">
-    <h2 class="text-2xl font-bold mb-4">대기실 (역할 선택)</h2>
-    <p class="text-slate-400 mb-6">원하는 특수 능력을 선택하세요. 한 명당 하나의 역할만 가능합니다.</p>
+    <h2 class="text-2xl font-bold mb-2">대기실 (역할 선택)</h2>
+    <p class="text-slate-400 mb-6">원하는 특수 능력을 읽어보고 선택하세요. 한 명당 하나의 역할만 가능합니다.</p>
     
     <div id="roles-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <!-- 역할 버튼들이 JS로 생성됨 -->
+      <!-- 역할 카드들이 JS로 생성됨 -->
     </div>
     
     <div class="text-center mt-8">
@@ -172,7 +173,18 @@
     let isAdmin = false;
     let timerInterval = null;
 
-    const ROLES = ["예언가", "탐정", "정보원", "닥터 스트레인지", "훼방꾼", "시간도둑", "통계학자", "성직자", "도박사"];
+    // [수정2] 직업별 아이콘과 설명 데이터
+    const ROLE_DETAILS = [
+      { name: "예언가", icon: "🔮", desc: "다음 라운드 우승자를 예측하여 성공 시 추가 추리 기회 획득" },
+      { name: "탐정", icon: "🕵️", desc: "게임 중 단 세 번, 추가 힌트 열람" },
+      { name: "정보원", icon: "🕵️‍♂️", desc: "1라운드 시작 시 비밀번호에 없는 숫자 2개 획득" },
+      { name: "닥터 스트레인지", icon: "🌀", desc: "단 한 번, 이전 우승자의 힌트와 제출 기록 열람" },
+      { name: "훼방꾼", icon: "💥", desc: "단 한 번, 우승자의 추리 기회를 강탈 (본인 3회 추리)" },
+      { name: "시간도둑", icon: "⏱️", desc: "매 라운드 다른 사람보다 5초 먼저 문제풀이 시작" },
+      { name: "통계학자", icon: "📊", desc: "누적된 제출 결과 중 A/B 통계 상시 확인" },
+      { name: "성직자", icon: "🛡️", desc: "훼방꾼의 능력 방어, 닥터 스트레인지 지목 면역" },
+      { name: "도박사", icon: "🎲", desc: "단 한 번 배팅, 배팅 라운드 우승 시 정답 숫자 1개 획득" }
+    ];
 
     // ==========================================
     // 정답 맞춤형 동적 힌트 생성기
@@ -236,25 +248,36 @@
       renderRoles();
     }
 
+    // [수정2] UI가 강화된 역할 선택 렌더링
     function renderRoles() {
       const grid = document.getElementById('roles-grid');
       grid.innerHTML = '';
-      ROLES.forEach(role => {
-        const btn = document.createElement('button');
-        btn.className = "bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded border border-slate-600 transition";
-        btn.innerText = role;
-        btn.onclick = () => selectRole(role);
+      ROLE_DETAILS.forEach(role => {
+        const btn = document.createElement('div');
+        btn.className = "group flex flex-col items-center bg-slate-700 hover:bg-slate-600 border border-slate-600 p-5 rounded-xl cursor-pointer transition text-center shadow-md";
+        btn.onclick = () => selectRole(role.name);
+        
+        btn.innerHTML = `
+          <div class="text-5xl mb-3 group-hover:scale-110 transition-transform">${role.icon}</div>
+          <h3 class="text-xl font-bold text-sky-300 mb-2">${role.name}</h3>
+          <p class="text-xs text-slate-300 leading-relaxed">${role.desc}</p>
+        `;
         grid.appendChild(btn);
       });
     }
 
-    function selectRole(role) {
-      myPlayer.role = role;
+    function selectRole(roleName) {
+      myPlayer.role = roleName;
       document.getElementById('my-name').innerText = myPlayer.name;
       document.getElementById('my-role').innerText = myPlayer.role;
       document.getElementById('user-info').classList.remove('hidden');
-      document.getElementById('roles-grid').innerHTML = `<div class="col-span-3 text-center text-xl text-emerald-400 font-bold">${role} 선택 완료! 대기하세요.</div>`;
-      gameState.players[myPlayer.name] = { role: role, score: 0, isAI: false, deductionAttempts: 1 };
+      document.getElementById('roles-grid').innerHTML = `
+        <div class="col-span-1 md:col-span-3 text-center p-8 bg-slate-900 border border-emerald-500 rounded-xl shadow-lg">
+          <div class="text-3xl text-emerald-400 font-bold mb-2">✅ [${roleName}] 선택 완료!</div>
+          <p class="text-slate-300">곧 게임이 시작됩니다. 대기해주세요.</p>
+        </div>
+      `;
+      gameState.players[myPlayer.name] = { role: roleName, score: 0, isAI: false, deductionAttempts: 1 };
     }
 
     function fillWithAI() {
@@ -265,7 +288,7 @@
       if (needed <= 0) return alert("이미 9명이 꽉 찼습니다.");
 
       for(let i=0; i<needed; i++) {
-        let role = ROLES[currentCount + i] || "시민";
+        let role = ROLE_DETAILS[currentCount + i]?.name || "시민";
         gameState.players[botNames[i]] = { role: role, score: 0, isAI: true, deductionAttempts: 1 };
       }
       alert(`${needed}명의 AI가 추가되었습니다.\n(AI는 문제풀이에서 무조건 0점을 받아 학생들의 우승을 방해하지 않습니다.)`);
