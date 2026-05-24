@@ -11,21 +11,79 @@
   <style>
     body { font-family: 'Pretendard', sans-serif; background-color: #0f172a; color: #f8fafc; }
     .hidden { display: none !important; }
+    
+    /* 스크롤바 디자인 */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center p-4">
 
   <!-- 헤더 -->
-  <header class="w-full max-w-4xl flex justify-between items-start py-4 border-b border-slate-700 mb-6">
+  <header class="w-full max-w-4xl flex justify-between items-start py-4 border-b border-slate-700 mb-6 relative">
     <div>
-      <h1 class="text-2xl font-bold text-sky-400">비밀번호 레이스 <span class="text-sm text-slate-400">v2.7 (완벽 제어 패치)</span></h1>
+      <h1 class="text-2xl font-bold text-sky-400">비밀번호 레이스 <span class="text-sm text-slate-400">v2.8 (규칙 및 초기화 패치)</span></h1>
       <div id="network-status" class="inline-block mt-1 text-xs px-2 py-0.5 bg-rose-900 text-rose-300 rounded">오프라인 (API 키 미등록)</div>
     </div>
-    <div id="user-info" class="text-sm font-medium text-slate-300 hidden text-right">
-      접속: <span id="my-name" class="text-white"></span><br>
-      <span id="my-role" class="text-emerald-400 font-bold"></span>
+    
+    <div class="flex flex-col items-end space-y-2">
+      <!-- [수정2] 규칙 모달 오픈 버튼 -->
+      <button onclick="openRules()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded text-sm font-bold shadow transition">
+        📖 게임 규칙 보기
+      </button>
+      
+      <div id="user-info" class="text-sm font-medium text-slate-300 hidden text-right">
+        접속: <span id="my-name" class="text-white"></span><br>
+        <span id="my-role" class="text-emerald-400 font-bold"></span>
+      </div>
     </div>
   </header>
+
+  <!-- [수정2] 게임 규칙 모달 -->
+  <div id="rules-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden px-4">
+    <div class="bg-slate-800 border border-slate-600 rounded-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-8 relative shadow-2xl">
+      <button onclick="closeRules()" class="absolute top-4 right-5 text-slate-400 hover:text-white text-4xl leading-none">&times;</button>
+      
+      <h2 class="text-3xl font-bold text-sky-400 mb-6 text-center border-b border-slate-600 pb-4">비밀번호 레이스 가이드</h2>
+      
+      <div class="space-y-6 text-slate-300">
+        <section>
+          <h3 class="text-xl font-bold text-emerald-400 mb-2">🎯 게임의 목표</h3>
+          <p class="text-sm leading-relaxed">총 10라운드 동안 수학 문제를 빠르게 풀고 힌트를 얻어, 누구보다 먼저 <strong>'네 자리 비밀번호'</strong>를 해독하는 팀이 승리하는 두뇌/심리 게임입니다.</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-bold text-amber-400 mb-2">⏱️ 스테이지 진행 방식 (1라운드 = 총 3분 30초)</h3>
+          <ul class="list-disc pl-5 text-sm space-y-2">
+            <li><strong class="text-white">1단계: 문제풀이 (1분)</strong><br> 일차함수 9문제(OX, 순서쌍, 사분면)를 풉니다. 1분 안에 전부 맞히면 힌트를 얻지만, 1개라도 틀리거나 시간 내에 제출하지 못하면 힌트를 얻지 못합니다. <strong>가장 먼저 다 맞힌 1등은 이번 라운드 '우승자'가 됩니다.</strong></li>
+            <li><strong class="text-white">2단계: 비밀번호 추리 (2분)</strong><br> 얻은 힌트를 바탕으로 4자리 비밀번호를 유추해 제출합니다. (결과는 A:숫자+자리 일치, B:숫자만 일치, C:불일치 로 나옴). <strong>우승자는 2번의 추리 제출 기회</strong>를 얻습니다.</li>
+            <li><strong class="text-white">3단계: 정비 시간 (30초)</strong><br> 이번 결과를 분석하고 정치 및 협상을 진행하며, 다음 라운드에 사용할 특수 능력을 예약합니다.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-bold text-fuchsia-400 mb-2">🎭 직업별 특수 능력 (단 하나만 선택 가능)</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div class="bg-slate-900 p-3 rounded"><strong>🔮 예언가:</strong> 다음 라운드 우승자를 예측, 성공 시 본인도 2번 추리 기회 획득.</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>🕵️ 탐정:</strong> 게임 중 단 3번, 남들보다 더 많은 비밀 힌트 열람.</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>😎 정보원:</strong> 게임 시작 시 비밀번호에 절대 없는 숫자 2개 획득.</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>🌀 닥터 스트레인지:</strong> 단 1번, 이전 라운드 우승자의 제출 기록/힌트 열람.</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>💥 훼방꾼:</strong> 단 1번, 우승자의 추리 기회를 강탈 (우승자는 제출 불가, 본인은 3회 제출).</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>⏱️ 시간도둑:</strong> 매 라운드 다른 사람보다 수학 문제를 5초 먼저 풂.</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>📊 통계학자:</strong> 남들이 제출한 기록 중 A/B 통계 상시 확인.</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>🛡️ 성직자:</strong> 훼방꾼 능력 방어, 닥터 스트레인지 타겟 면역.</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>🎲 도박사:</strong> 단 1번 배팅, 우승 시 힌트 외에 정답 숫자 1개 획득.</div>
+          </div>
+        </section>
+      </div>
+      
+      <div class="mt-8 text-center">
+        <button onclick="closeRules()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-8 rounded-full transition shadow-lg">확인했습니다</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 1. 로그인 화면 (참가자 & 관리자) -->
   <main id="screen-login" class="w-full max-w-md bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700">
@@ -35,14 +93,19 @@
     <div class="mb-6 pb-6 border-b border-slate-700">
       <label class="block text-sm mb-2">학생 이름</label>
       <input type="text" id="login-name" class="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white mb-4" placeholder="이름을 입력하세요">
-      <button onclick="joinGame()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded transition">게임 참가 (최대 9명)</button>
+      <button onclick="joinGame()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded transition shadow-lg">게임 참가 (최대 9명)</button>
     </div>
 
-    <!-- 관리자 접속 -->
+    <!-- 관리자 접속 및 초기화 -->
     <div>
       <label class="block text-sm mb-2 text-slate-400">관리자 (교실 공용 모니터 띄우기용)</label>
-      <input type="password" id="login-admin-pw" class="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white mb-4" placeholder="관리자 비밀번호를 입력하세요">
-      <button onclick="loginAdmin()" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 rounded transition">관리자로 접속</button>
+      <input type="password" id="login-admin-pw" class="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white mb-4" placeholder="관리자 비밀번호">
+      
+      <!-- [수정1] 시스템 초기화 버튼 추가 -->
+      <div class="flex space-x-2">
+        <button onclick="loginAdmin()" class="w-2/3 bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 rounded transition">접속</button>
+        <button onclick="resetSystemFromLogin()" class="w-1/3 bg-rose-700 hover:bg-rose-600 text-white font-bold py-3 rounded transition text-sm">시스템 초기화</button>
+      </div>
     </div>
   </main>
 
@@ -51,9 +114,7 @@
     <h2 class="text-2xl font-bold mb-2">대기실 (역할 선택)</h2>
     <p class="text-slate-400 mb-6">원하는 특수 능력을 읽어보고 선택하세요. 한 명당 하나의 역할만 가능합니다.</p>
     
-    <div id="roles-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <!-- 역할 카드들이 JS로 생성됨 -->
-    </div>
+    <div id="roles-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
     
     <div class="text-center mt-8">
       <p class="text-yellow-400 animate-pulse" id="waiting-msg">관리자가 게임을 시작할 때까지 대기해주세요...</p>
@@ -64,26 +125,24 @@
   <main id="screen-admin" class="w-full max-w-4xl bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 hidden mb-6">
     <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
       <h2 class="text-2xl font-bold text-rose-400">교실 중앙 컨트롤 패널</h2>
-      <div class="text-sm text-slate-400">
-        시스템이 자동으로 정답을 숨기고 채점합니다.
-      </div>
+      <div class="text-sm text-slate-400">시스템이 자동으로 정답을 숨기고 채점합니다.</div>
     </div>
     
     <div class="grid grid-cols-2 gap-4 mb-6">
-      <!-- 접속자 리스트 -->
       <div class="bg-slate-900 p-4 rounded">
         <h3 class="font-bold text-sky-300 mb-2">현재 접속자 (최대 9명)</h3>
         <ul id="admin-player-list" class="text-sm space-y-2 text-slate-300 font-medium"></ul>
         <button onclick="fillWithAI()" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded text-sm transition">빈 자리 AI봇으로 채우기</button>
       </div>
       
-      <!-- 진행 제어 -->
-      <div class="bg-slate-900 p-4 rounded flex flex-col justify-center items-center">
+      <div class="bg-slate-900 p-4 rounded flex flex-col justify-center items-center relative">
         <h3 class="font-bold text-yellow-300 mb-4 text-center">게임 진행 제어</h3>
         <div id="admin-round-info" class="text-xl mb-4 font-bold">대기 중</div>
         <button onclick="adminStartNextStage()" id="admin-next-btn" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-4 rounded text-lg transition shadow-lg">
           1라운드 시작하기
         </button>
+        <!-- 관리자 모드 내부 시스템 초기화 버튼 -->
+        <button onclick="resetSystemFromLogin()" class="absolute top-2 right-2 text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded hover:bg-rose-700 hover:text-white transition">전체 초기화</button>
       </div>
     </div>
   </main>
@@ -155,7 +214,7 @@
       <h3 class="text-3xl font-bold text-rose-400 mb-6">모든 라운드 종료!</h3>
       <p class="text-xl mb-4">비밀번호 정답은 <span id="final-password" class="font-mono font-bold text-yellow-300 text-3xl"></span> 였습니다.</p>
       <p class="text-slate-300 mb-8">수고하셨습니다. 과연 비밀번호를 알아낸 팀이 있었을까요?</p>
-      <button onclick="resetToLobby()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-8 rounded-xl text-xl transition">
+      <button onclick="resetToLobbyLocal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-8 rounded-xl text-xl transition">
         초기 화면으로 복귀하기
       </button>
     </div>
@@ -171,19 +230,19 @@
 
     // ★★★ 여기에 선생님의 API 키를 입력하세요 ★★★
     const firebaseConfig = {
-      apiKey: "AIzaSyDX5TiB78wqtnzgwgOpfnEv7f0hcN0L4LU",
-      authDomain: "duru20401-b60fa.firebaseapp.com",
-      projectId: "duru20401-b60fa",
-      storageBucket: "duru20401-b60fa.firebasestorage.app",
-      messagingSenderId: "790407879385",
-      appId: "1:790407879385:web:c1bce54aa1d470951ebcc8"
+      apiKey: "여기에_선생님의_API_KEY_입력",
+      authDomain: "PROJECT_ID.firebaseapp.com",
+      projectId: "PROJECT_ID",
+      storageBucket: "PROJECT_ID.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
     };
 
     if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("API_KEY_입력")) {
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
       useFirebase = true;
-      document.getElementById('network-status').className = "inline-block mt-1 text-xs px-2 py-0.5 bg-emerald-900 text-emerald-300 rounded font-bold";
+      document.getElementById('network-status').className = "inline-block mt-1 text-xs px-2 py-0.5 bg-emerald-900 text-emerald-300 rounded font-bold shadow";
       document.getElementById('network-status').innerText = "온라인 (실시간 DB 연동)";
     }
 
@@ -199,7 +258,29 @@
     let isAdmin = false;
     let timerInterval = null;
 
-    // [학생용] 점수 및 직업 선택만 DB의 본인 영역에 안전하게 저장
+    // 모달 관련 함수
+    function openRules() { document.getElementById('rules-modal').classList.remove('hidden'); }
+    function closeRules() { document.getElementById('rules-modal').classList.add('hidden'); }
+
+    // [수정1] 시스템 전체 초기화 (학생들 강제 로그아웃)
+    function resetSystemFromLogin() {
+      const pw = document.getElementById('login-admin-pw').value;
+      if (pw !== "2525" && !isAdmin) return alert("관리자 비밀번호를 먼저 입력하세요.");
+      
+      if (!confirm("⚠️ 정말 모든 데이터를 삭제하시겠습니까?\n현재 접속 중인 참가자도 모두 강제 퇴장됩니다.")) return;
+      
+      let emptyState = { stage: 'LOBBY', round: 0, players: {}, secretPassword: "", hintsData: [] };
+      
+      if (useFirebase) {
+        db.collection("race_rooms").doc("room1").set(emptyState);
+      } else {
+        localStorage.setItem("race_gameState", JSON.stringify(emptyState));
+      }
+      
+      alert("시스템이 성공적으로 초기화되었습니다.");
+      if(isAdmin) resetToLobbyLocal();
+    }
+
     function syncPlayerState() {
       if (useFirebase) {
         db.collection("race_rooms").doc("room1").set({ 
@@ -213,7 +294,6 @@
       }
     }
 
-    // [관리자용] 다음 라운드 전환 명령을 DB에 쏴줌 (학생 태블릿 제어)
     function syncGameStateFromAdmin() {
       if (useFirebase) {
         db.collection("race_rooms").doc("room1").set({
@@ -232,12 +312,11 @@
       }
     }
 
-    // [관리자용] 특정 플레이어 퇴장 (DB에서 삭제)
     function kickPlayer(pName) {
       if (!isAdmin) return;
       if (!confirm(`[${pName}] 참가자를 강제 퇴장시키겠습니까?`)) return;
       
-      delete gameState.players[pName]; // 로컬 즉시 지우기
+      delete gameState.players[pName];
       if (useFirebase) {
         db.collection("race_rooms").doc("room1").set({
           players: { [pName]: firebase.firestore.FieldValue.delete() }
@@ -252,7 +331,6 @@
       updateAdminPlayerList();
     }
 
-    // ★ 학생들의 기기가 DB 변화를 감지하고 화면을 즉각 넘기는 핵심 리스너 ★
     function initSyncListener() {
       if (useFirebase) {
         db.collection("race_rooms").doc("room1").onSnapshot(doc => {
@@ -267,7 +345,6 @@
       }
     }
 
-    // 데이터 수신 시 공통 처리
     function handleSyncData(data) {
       if (!data) return;
 
@@ -281,15 +358,14 @@
       if (isAdmin) {
         updateAdminPlayerList();
       } else {
-        // [퇴장 감지] 내가 이름을 등록했는데, 서버 명단에서 사라졌다면 튕김 처리
+        // [퇴장 감지] 시스템 초기화나 강제 퇴장당했을 때 알림 및 로비 복귀
         if (myPlayer.name !== "" && !gameState.players[myPlayer.name]) {
-            alert("관리자에 의해 강제 퇴장되었거나 게임이 초기화되었습니다.");
+            alert("⚠️ 관리자에 의해 게임이 초기화되었거나 강제 퇴장되었습니다.");
             resetToLobbyLocal();
             return;
         }
       }
 
-      // 관리자가 Stage(스테이지)를 변경했을 때 태블릿 화면 동기화
       if (data.stage && data.round !== undefined) {
         gameState.stage = data.stage;
         gameState.round = data.round;
@@ -303,7 +379,6 @@
         }
       }
     }
-    
     initSyncListener();
 
     // ==========================================
@@ -369,7 +444,7 @@
       
       myPlayer.name = name;
       myPlayer.isAI = false;
-      myPlayer.role = "직업 선택 중..."; // [패치] 참가 즉시 대기실 명단에 올림
+      myPlayer.role = "직업 선택 중..."; 
       
       gameState.players[myPlayer.name] = { role: myPlayer.role, score: 0, isAI: false, deductionAttempts: 1 };
       syncPlayerState(); 
@@ -414,7 +489,7 @@
         gameState.players[botNames[i]] = { role: role, score: 0, isAI: true, deductionAttempts: 1 };
       }
       alert(`${needed}명의 AI가 추가되었습니다.`);
-      syncGameStateFromAdmin(); // 봇 추가 후 전체 덮어쓰기 동기화
+      syncGameStateFromAdmin();
     }
 
     function updateAdminPlayerList() {
@@ -428,7 +503,7 @@
         list.innerHTML += `
           <li class="bg-slate-800 p-2 rounded mb-1 flex items-center justify-between">
             <div><span class="mr-2 text-lg">${roleIcon}</span> <span>${pName} ${isBot} <span class="text-emerald-400 text-xs ml-2">[${p.role}]</span></span></div>
-            <button onclick="kickPlayer('${pName}')" class="text-xs bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded transition">퇴장</button>
+            <button onclick="kickPlayer('${pName}')" class="text-xs bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded transition shadow">강제 퇴장</button>
           </li>
         `;
       });
@@ -518,9 +593,8 @@
         document.getElementById('admin-next-btn').innerText = gameState.round >= 10 ? "최종 결과 보기" : "다음 라운드 시작";
       }
 
-      // ★ 이 함수가 DB를 업데이트하면, 학생 태블릿의 리스너가 반응해 동시에 넘어감 ★
       syncGameStateFromAdmin();
-      triggerStageClient(gameState.stage); // 관리자 화면도 동시 적용
+      triggerStageClient(gameState.stage);
     }
 
     function triggerStageClient(stage) {
@@ -648,22 +722,8 @@
     }
 
     // ==========================================
-    // 6. 초기화
+    // 6. 로컬 초기화 공통
     // ==========================================
-    function resetToLobby() {
-      gameState.round = 0;
-      gameState.stage = 'LOBBY';
-      gameState.players = {};
-      
-      // DB를 완전히 비워서 학생 기기도 로비로 쫓겨나게 만듦
-      if (useFirebase) {
-        db.collection("race_rooms").doc("room1").set({ stage: 'LOBBY', round: 0, players: {} });
-      } else {
-        localStorage.setItem("race_gameState", "{}");
-      }
-      resetToLobbyLocal();
-    }
-
     function resetToLobbyLocal() {
       clearInterval(timerInterval);
       myPlayer = { name: "", role: "", isAI: false };
