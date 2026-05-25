@@ -15,7 +15,6 @@
     ::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
     ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-    /* 우승자 축하 애니메이션 */
     @keyframes pop {
       0% { transform: scale(0.8); opacity: 0; }
       50% { transform: scale(1.1); opacity: 1; }
@@ -29,9 +28,10 @@
   <!-- 헤더 -->
   <header class="w-full max-w-5xl flex justify-between items-start py-4 border-b border-slate-700 mb-6 relative">
     <div>
-      <h1 class="text-2xl font-bold text-sky-400">비밀번호 레이스 <span class="text-sm text-slate-400">v3.0 (키패드 & 최종 우승 패치)</span></h1>
+      <h1 class="text-2xl font-bold text-sky-400">비밀번호 레이스 <span class="text-sm text-slate-400">v3.1 (관리자 BGM & 탐정 밸런스 패치)</span></h1>
       <div id="network-status" class="inline-block mt-1 text-xs px-2 py-0.5 bg-rose-900 text-rose-300 rounded shadow">오프라인 (API 키 미등록)</div>
-      <button onclick="toggleBGM()" id="bgm-toggle" class="ml-2 inline-block text-xs px-2 py-0.5 bg-slate-700 hover:bg-slate-600 text-white rounded shadow cursor-pointer">
+      <!-- [수정2] BGM 버튼 기본 숨김 처리 -->
+      <button onclick="toggleBGM()" id="bgm-toggle" class="hidden ml-2 inline-block text-xs px-2 py-0.5 bg-slate-700 hover:bg-slate-600 text-white rounded shadow cursor-pointer">
         🔇 BGM OFF
       </button>
     </div>
@@ -76,7 +76,6 @@
 
   <!-- 게임 규칙 모달 -->
   <div id="rules-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden px-4">
-    <!-- (이전 규칙 내용 동일 유지) -->
     <div class="bg-slate-800 border border-slate-600 rounded-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-8 relative shadow-2xl">
       <button onclick="closeRules()" class="absolute top-4 right-5 text-slate-400 hover:text-white text-4xl leading-none">&times;</button>
       <h2 class="text-3xl font-bold text-sky-400 mb-6 text-center border-b border-slate-600 pb-4">비밀번호 레이스 가이드</h2>
@@ -97,7 +96,7 @@
           <h3 class="text-xl font-bold text-fuchsia-400 mb-2">🎭 직업별 특수 능력</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
             <div class="bg-slate-900 p-3 rounded"><strong>🔮 예언가:</strong> 우승자 예측 성공 시 2번 추리 기회 획득.</div>
-            <div class="bg-slate-900 p-3 rounded"><strong>🕵️ 탐정:</strong> 게임 중 단 3번, 남들보다 더 많은 비밀 힌트 열람.</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>🕵️ 탐정:</strong> 게임 중 단 3번, 남들보다 더 많은 비밀 힌트 열람. (라운드당 1회 제한)</div>
             <div class="bg-slate-900 p-3 rounded"><strong>😎 정보원:</strong> 게임 시작 시 비밀번호에 절대 없는 숫자 2개 획득.</div>
             <div class="bg-slate-900 p-3 rounded"><strong>🌀 닥터 스트레인지:</strong> 단 1번, 이전 우승자의 힌트/제출 기록 열람.</div>
             <div class="bg-slate-900 p-3 rounded"><strong>💥 훼방꾼:</strong> 단 1번, 우승자의 기회 강탈 (본인 3회 제출).</div>
@@ -172,10 +171,8 @@
       <div class="text-3xl font-mono font-bold text-white" id="game-timer">00:00</div>
     </div>
 
-    <!-- 4-1. 문제풀이 스테이지 (분할 레이아웃 & 카운트다운 적용) -->
+    <!-- 4-1. 문제풀이 스테이지 -->
     <div id="stage-problem" class="bg-slate-800 p-6 rounded-xl border border-slate-700 hidden relative overflow-hidden">
-      
-      <!-- [수정1] 5초 카운트다운 오버레이 -->
       <div id="problem-countdown" class="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/95 flex-col hidden backdrop-blur-sm">
         <div class="text-2xl text-slate-300 mb-4 font-bold">문제 풀이 준비...</div>
         <span class="text-9xl font-black text-amber-400 animate-ping drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]" id="countdown-number">5</span>
@@ -186,12 +183,8 @@
         <span class="text-sm font-normal text-slate-400 mt-1">숫자 키패드를 이용해 입력하세요</span>
       </h3>
       
-      <!-- [수정3] 좌측 문제 / 우측 키패드 레이아웃 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-        <!-- 좌측: 문제 리스트 -->
         <div id="problem-list" class="space-y-3 max-h-[50vh] overflow-y-auto pr-2"></div>
-        
-        <!-- 우측: 숫자 키패드 -->
         <div class="bg-slate-900 p-6 rounded-xl flex flex-col items-center justify-center h-fit border border-slate-700 shadow-inner">
           <div class="text-lg text-sky-300 mb-4 font-bold bg-slate-800 px-4 py-2 rounded-full w-full text-center">
             현재 입력 중: <span id="active-prob-num" class="text-white">선택된 문제 없음</span>
@@ -238,7 +231,7 @@
       </div>
 
       <div id="detective-area" class="hidden flex justify-center mb-6">
-        <button onclick="useDetectiveHint()" id="btn-detective-hint" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-6 rounded-full shadow transition">
+        <button onclick="useDetectiveHint()" id="btn-detective-hint" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-6 rounded-full shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
           🕵️ 탐정 전용 추가 힌트 열람 (남은 횟수: <span id="detective-count">3</span>)
         </button>
       </div>
@@ -266,7 +259,7 @@
       <div id="prep-ability-area" class="bg-slate-900 p-6 rounded border border-slate-600 text-center"></div>
     </div>
 
-    <!-- [수정4] 4-5. 최종 우승자 축하 화면 (Early End) -->
+    <!-- 4-5. 최종 우승자 축하 화면 -->
     <div id="stage-final-winner" class="bg-slate-800 p-12 rounded-xl border-4 border-yellow-400 hidden text-center relative overflow-hidden shadow-[0_0_50px_rgba(250,204,21,0.3)]">
       <div class="absolute inset-0 bg-[url('https://cdn.pixabay.com/photo/2021/09/12/08/33/confetti-6617637_1280.png')] bg-cover bg-center opacity-30 animate-pulse"></div>
       <h2 class="text-5xl font-extrabold text-yellow-300 mb-6 relative z-10 animate-pop">🎉 정답 해독 완료! 🎉</h2>
@@ -278,7 +271,7 @@
       </button>
     </div>
 
-    <!-- 기존 전체 게임 종료 화면 -->
+    <!-- 전체 게임 종료 화면 (해독자 없음) -->
     <div id="stage-gameover" class="bg-slate-800 p-8 rounded-xl border border-slate-700 hidden text-center">
       <h3 class="text-3xl font-bold text-rose-400 mb-6">모든 라운드 종료! (해독자 없음)</h3>
       <p class="text-xl mb-4">비밀번호 정답은 <span id="final-password" class="font-mono font-bold text-yellow-300 text-3xl"></span> 였습니다.</p>
@@ -291,7 +284,7 @@
 
   <script>
     // ==========================================
-    // BGM 플레이어
+    // BGM 플레이어 (관리자 모드 전용)
     // ==========================================
     const bgmPlaylist = ['bgm.mp3', 'bgm2.mp3'];
     let currentBgmIndex = 0;
@@ -311,10 +304,10 @@
     function autoStartBGM() { if(!isBgmPlaying) toggleBGM(); }
 
     // ==========================================
-    // 파이어베이스 및 로컬 동기화 통합 시스템
+    // 파이어베이스 및 로컬 동기화 시스템
     // ==========================================
     let useFirebase = false; let db = null;
-    const firebaseConfig = { 
+    const firebaseConfig = {
       apiKey: "AIzaSyDX5TiB78wqtnzgwgOpfnEv7f0hcN0L4LU",
       authDomain: "duru20401-b60fa.firebaseapp.com",
       projectId: "duru20401-b60fa",
@@ -322,7 +315,6 @@
       messagingSenderId: "790407879385",
       appId: "1:790407879385:web:c1bce54aa1d470951ebcc8",
     };
-
 
     if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("API_KEY_입력")) {
       firebase.initializeApp(firebaseConfig);
@@ -334,34 +326,26 @@
 
     let gameState = { round: 0, stage: 'LOBBY', secretPassword: "", hintsData: [], players: {}, finalWinners: [] };
     let myPlayer = { name: "", role: "", isAI: false, detectiveHints: 3, historyHints: [], historyGuesses: [] };
+    // [수정1] 탐정 라운드당 1회 힌트 사용 변수
+    let usedDetectiveHintThisRound = false;
+    
     let isAdmin = false; let timerInterval = null;
 
-    // 모달 관리
     function openRules() { document.getElementById('rules-modal').classList.remove('hidden'); }
     function closeRules() { document.getElementById('rules-modal').classList.add('hidden'); }
     
-    // [수정2] 내 기록 열람 모달 관리
     function openHistory() {
       document.getElementById('history-modal').classList.remove('hidden');
       const hintsList = document.getElementById('history-hints-list');
       const guessList = document.getElementById('history-guesses-list');
-      
-      hintsList.innerHTML = myPlayer.historyHints.length > 0 
-        ? myPlayer.historyHints.map(h => `<li class="mb-1">${h}</li>`).join('')
-        : `<li class="text-slate-500 list-none">아직 획득한 힌트가 없습니다.</li>`;
-        
-      guessList.innerHTML = myPlayer.historyGuesses.length > 0
-        ? myPlayer.historyGuesses.map(g => `<li class="mb-1">${g}</li>`).join('')
-        : `<li class="text-slate-500">아직 제출한 추리 기록이 없습니다.</li>`;
+      hintsList.innerHTML = myPlayer.historyHints.length > 0 ? myPlayer.historyHints.map(h => `<li class="mb-1">${h}</li>`).join('') : `<li class="text-slate-500 list-none">아직 획득한 힌트가 없습니다.</li>`;
+      guessList.innerHTML = myPlayer.historyGuesses.length > 0 ? myPlayer.historyGuesses.map(g => `<li class="mb-1">${g}</li>`).join('') : `<li class="text-slate-500">아직 제출한 추리 기록이 없습니다.</li>`;
     }
     function closeHistory() { document.getElementById('history-modal').classList.add('hidden'); }
 
-    // [수정3] 키패드 액티브 인풋 관리
     let activeInputId = null;
     function setActiveInput(id, num) {
-      activeInputId = id;
-      document.getElementById('active-prob-num').innerText = num + "번 문제";
-      // 하이라이트 효과
+      activeInputId = id; document.getElementById('active-prob-num').innerText = num + "번 문제";
       document.querySelectorAll('#problem-list input').forEach(el => el.classList.remove('border-amber-400', 'border-2'));
       document.getElementById(id).classList.add('border-amber-400', 'border-2');
     }
@@ -369,10 +353,7 @@
       if(!activeInputId) return;
       let el = document.getElementById(activeInputId);
       if(val === 'C') el.value = '';
-      else if(val === '-') {
-        if(el.value.includes('-')) el.value = el.value.replace('-','');
-        else el.value = '-' + el.value;
-      }
+      else if(val === '-') { if(el.value.includes('-')) el.value = el.value.replace('-',''); else el.value = '-' + el.value; }
       else el.value += val;
     }
 
@@ -391,29 +372,18 @@
 
     function syncPlayerState() {
       if (useFirebase) db.collection("race_rooms").doc("room1").set({ players: { [myPlayer.name]: gameState.players[myPlayer.name] } }, { merge: true });
-      else {
-        let saved = JSON.parse(localStorage.getItem("race_gameState") || "{}");
-        saved.players = saved.players || {}; saved.players[myPlayer.name] = gameState.players[myPlayer.name];
-        localStorage.setItem("race_gameState", JSON.stringify(saved));
-      }
+      else { let saved = JSON.parse(localStorage.getItem("race_gameState") || "{}"); saved.players = saved.players || {}; saved.players[myPlayer.name] = gameState.players[myPlayer.name]; localStorage.setItem("race_gameState", JSON.stringify(saved)); }
     }
 
     function syncGameStateFromAdmin() {
-      if (useFirebase) {
-        db.collection("race_rooms").doc("room1").set({ stage: gameState.stage, round: gameState.round, secretPassword: gameState.secretPassword, hintsData: gameState.hintsData, finalWinners: gameState.finalWinners || [] }, { merge: true });
-      } else {
-        let saved = JSON.parse(localStorage.getItem("race_gameState") || "{}");
-        saved.stage = gameState.stage; saved.round = gameState.round; saved.secretPassword = gameState.secretPassword; saved.hintsData = gameState.hintsData; saved.finalWinners = gameState.finalWinners || [];
-        localStorage.setItem("race_gameState", JSON.stringify(saved));
-      }
+      if (useFirebase) db.collection("race_rooms").doc("room1").set({ stage: gameState.stage, round: gameState.round, secretPassword: gameState.secretPassword, hintsData: gameState.hintsData, finalWinners: gameState.finalWinners || [] }, { merge: true });
+      else { let saved = JSON.parse(localStorage.getItem("race_gameState") || "{}"); saved.stage = gameState.stage; saved.round = gameState.round; saved.secretPassword = gameState.secretPassword; saved.hintsData = gameState.hintsData; saved.finalWinners = gameState.finalWinners || []; localStorage.setItem("race_gameState", JSON.stringify(saved)); }
     }
 
     function initSyncListener() {
       if (useFirebase) db.collection("race_rooms").doc("room1").onSnapshot(doc => { if (doc.exists) handleSyncData(doc.data()); });
-      else {
-        window.addEventListener("storage", (e) => { if (e.key === "race_gameState") handleSyncData(JSON.parse(e.newValue || "{}")); });
-        let saved = localStorage.getItem("race_gameState"); if (saved) handleSyncData(JSON.parse(saved));
-      }
+      else { window.addEventListener("storage", (e) => { if (e.key === "race_gameState") handleSyncData(JSON.parse(e.newValue || "{}")); });
+        let saved = localStorage.getItem("race_gameState"); if (saved) handleSyncData(JSON.parse(saved)); }
     }
 
     function handleSyncData(data) {
@@ -442,7 +412,7 @@
 
     const ROLE_DETAILS = [
       { name: "예언가", icon: "🔮", desc: "우승자 예측 성공 시 추가 추리 기회 획득" },
-      { name: "탐정", icon: "🕵️", desc: "게임 중 단 3번, 남들보다 힌트를 더 확인" },
+      { name: "탐정", icon: "🕵️", desc: "게임 중 단 3번, 남들보다 힌트를 더 확인. (라운드당 1회)" },
       { name: "정보원", icon: "😎", desc: "1라운드 시작 시 비밀번호에 없는 숫자 2개 획득" },
       { name: "닥터 스트레인지", icon: "🌀", desc: "이전 우승자의 제출 기록 1회 열람" },
       { name: "훼방꾼", icon: "💥", desc: "우승자의 기회를 단 1번 강탈 (본인 3회 추리)" },
@@ -454,8 +424,7 @@
 
     function generateLogicalHints(secretStr) {
       const digits = secretStr.split('').map(Number);
-      const evens = digits.filter(n => n % 2 === 0).length;
-      const sum = digits.reduce((a, b) => a + b, 0);
+      const evens = digits.filter(n => n % 2 === 0).length; const sum = digits.reduce((a, b) => a + b, 0);
       const max = Math.max(...digits); const min = Math.min(...digits);
       const primes = digits.filter(n => [2,3,5,7].includes(n)).length;
       let notInPassword = [0,1,2,3,4,5,6,7,8,9].find(n => !digits.includes(n));
@@ -492,6 +461,8 @@
         gameState.secretPassword = digits.slice(0, 4).join('');
         gameState.hintsData = generateLogicalHints(gameState.secretPassword);
         
+        // [수정2] 관리자 모드에서만 BGM 버튼 보이고 재생
+        document.getElementById('bgm-toggle').classList.remove('hidden');
         syncGameStateFromAdmin(); autoStartBGM();
       } else { alert("비밀번호가 틀렸습니다."); }
     }
@@ -507,7 +478,8 @@
 
       document.getElementById('screen-login').classList.add('hidden');
       document.getElementById('screen-lobby').classList.remove('hidden');
-      renderRoles(); autoStartBGM();
+      renderRoles(); 
+      // [수정2] 참가자 화면에서는 BGM 재생하지 않음
     }
 
     function renderRoles() {
@@ -583,12 +555,10 @@
       const list = document.getElementById('problem-list'); list.innerHTML = '';
       window.currentProblems = generateMathProblems();
       window.currentProblems.forEach(p => {
-        // [수정3] 키패드 연동을 위한 onfocus 추가 및 읽기 전용 해제 (키패드 + 직접 입력 모두 가능)
         let ph = p.type === 'ox' ? "1=O, 2=X" : "정답";
         let inputHtml = `<input type="number" id="prob-${p.num}" onfocus="setActiveInput('prob-${p.num}', ${p.num})" class="w-24 p-2 rounded bg-slate-900 border border-slate-600 text-center font-bold text-lg focus:outline-none transition" placeholder="${ph}">`;
         list.innerHTML += `<div class="flex items-center justify-between bg-slate-700 p-3 rounded-lg shadow-sm"><span class="font-bold text-sky-300 w-8 text-lg">${p.num}.</span><span class="flex-1 px-3 text-sm">${p.text}</span>${inputHtml}</div>`;
       });
-      // 첫 문제 기본 선택
       setTimeout(() => { if(document.getElementById('prob-1')) setActiveInput('prob-1', 1); }, 100);
     }
 
@@ -623,7 +593,6 @@
     }
 
     function adminStartNextStage() {
-      // [수정4] 추리 종료 후 정답자가 있는지 확인
       if (gameState.stage === 'DEDUCTION') {
           let winners = Object.keys(gameState.players).filter(p => gameState.players[p].isWinner);
           if (winners.length > 0) {
@@ -636,19 +605,15 @@
           }
       }
       else if (gameState.round >= 10 && gameState.stage === 'PREP') {
-        gameState.stage = 'GAMEOVER';
-        document.getElementById('admin-round-info').innerText = `게임 종료`;
-        document.getElementById('admin-next-btn').innerText = "결과창 띄우기";
+        gameState.stage = 'GAMEOVER'; document.getElementById('admin-round-info').innerText = `게임 종료`; document.getElementById('admin-next-btn').innerText = "결과창 띄우기";
       }
       else if (gameState.stage === 'LOBBY' || gameState.stage === 'PREP') {
         gameState.round++; gameState.stage = 'PROBLEM';
-        document.getElementById('admin-round-info').innerText = `Round ${gameState.round} - 문제풀이 (1분)`;
-        document.getElementById('admin-next-btn').innerText = "문제풀이 조기 종료";
+        document.getElementById('admin-round-info').innerText = `Round ${gameState.round} - 문제풀이 (1분)`; document.getElementById('admin-next-btn').innerText = "문제풀이 조기 종료";
       } 
       else if (gameState.stage === 'PROBLEM' || gameState.stage === 'PROBLEM_RESULT') {
         gameState.stage = 'DEDUCTION';
-        document.getElementById('admin-round-info').innerText = `Round ${gameState.round} - 추리 (2분)`;
-        document.getElementById('admin-next-btn').innerText = "추리 조기 종료";
+        document.getElementById('admin-round-info').innerText = `Round ${gameState.round} - 추리 (2분)`; document.getElementById('admin-next-btn').innerText = "추리 조기 종료";
       }
 
       syncGameStateFromAdmin();
@@ -660,16 +625,12 @@
       document.getElementById('screen-game').classList.remove('hidden');
       document.getElementById('game-round-display').innerText = `Round ${gameState.round}`;
       
-      // 기록 열람 버튼 표시 (참가자용)
       if (!isAdmin && stage !== 'LOBBY' && stage !== 'PROBLEM' && stage !== 'PROBLEM_RESULT') {
           document.getElementById('btn-history-top').classList.remove('hidden');
-      } else {
-          document.getElementById('btn-history-top').classList.add('hidden');
-      }
+      } else { document.getElementById('btn-history-top').classList.add('hidden'); }
       
       hideAllStages();
 
-      // [수정4] 최종 우승 화면
       if (stage === 'FINAL_WINNER') {
         document.getElementById('game-stage-display').innerText = "레이스 종료!";
         document.getElementById('stage-final-winner').classList.remove('hidden');
@@ -692,21 +653,20 @@
         renderProblems();
         if(gameState.players[myPlayer.name]) gameState.players[myPlayer.name].submitTime = Infinity;
         
-        // [수정1] 5초 카운트다운 로직
         let cdOverlay = document.getElementById('problem-countdown');
         let cdNum = document.getElementById('countdown-number');
-        let stageTotalTime = 65; // 베이스 타이머 65초
+        let stageTotalTime = 65; 
         
         if (!isAdmin) {
             if (myPlayer.role === '시간도둑') {
-                cdOverlay.classList.add('hidden'); // 시간도둑은 즉시 시작 (65초 혜택)
+                cdOverlay.classList.add('hidden'); 
             } else {
                 cdOverlay.classList.remove('hidden');
                 let count = 5; cdNum.innerText = count;
                 let cInt = setInterval(() => {
                     count--;
                     if(count > 0) cdNum.innerText = count;
-                    else { clearInterval(cInt); cdOverlay.classList.add('hidden'); } // 5초 뒤 화면 열림
+                    else { clearInterval(cInt); cdOverlay.classList.add('hidden'); } 
                 }, 1000);
             }
         }
@@ -720,6 +680,9 @@
         document.getElementById('deduction-results-list').innerHTML = '';
         document.getElementById('informant-message').classList.add('hidden');
         
+        // [수정1] 탐정 힌트 초기화
+        usedDetectiveHintThisRound = false;
+
         let winnerName = calculateWinner();
         let attempts = (myPlayer.name === winnerName) ? 2 : 1;
         
@@ -734,16 +697,24 @@
         
         if (myScore === 9) {
             hintsUl.innerHTML = `<li>${currentHint}</li>`;
-            // [수정2] 내 기록 모달에 저장 (중복 방지)
             if (!myPlayer.historyHints.includes(currentHint)) myPlayer.historyHints.push(currentHint);
         } else {
             hintsUl.innerHTML = `<li class="text-rose-400 font-bold">❌ 해독에 실패하여 공통 힌트를 획득하지 못했습니다.</li>`;
         }
 
+        // [수정1] 탐정 버튼 렌더링
         if (myPlayer.role === '탐정') {
             document.getElementById('detective-area').classList.remove('hidden');
             document.getElementById('detective-count').innerText = myPlayer.detectiveHints;
-            document.getElementById('btn-detective-hint').disabled = (myPlayer.detectiveHints <= 0);
+            
+            let detBtn = document.getElementById('btn-detective-hint');
+            detBtn.disabled = (myPlayer.detectiveHints <= 0);
+            
+            if(myPlayer.detectiveHints <= 0) {
+               detBtn.innerText = "🕵️ 추가 힌트 모두 소진됨";
+            } else {
+               detBtn.innerText = `🕵️ 탐정 전용 추가 힌트 열람 (남은 횟수: ${myPlayer.detectiveHints})`;
+            }
         } else { document.getElementById('detective-area').classList.add('hidden'); }
 
         if (myPlayer.role === '정보원' && gameState.round === 1) {
@@ -784,16 +755,26 @@
       document.getElementById('round-winner').innerText = calculateWinner();
     }
 
+    // [수정1] 탐정 힌트 사용 시 라운드당 1회 제한 로직
     function useDetectiveHint() {
+        if (usedDetectiveHintThisRound) {
+            alert("이번 라운드에서는 이미 추가 힌트를 열람했습니다.");
+            return;
+        }
+
         if (myPlayer.detectiveHints > 0) {
             myPlayer.detectiveHints--;
+            usedDetectiveHintThisRound = true; // 깃발 세우기
+
             document.getElementById('detective-count').innerText = myPlayer.detectiveHints;
             let extraHint = gameState.hintsData[10 + myPlayer.detectiveHints]; 
             document.getElementById('deduction-hints').innerHTML += `<li class="text-indigo-400 font-bold mt-2">🕵️ [탐정 전용] ${extraHint}</li>`;
             
-            // 내 기록에도 저장
-            if (!myPlayer.historyHints.includes(extraHint)) myPlayer.historyHints.push(`[탐정] ${extraHint}`);
-            if (myPlayer.detectiveHints === 0) document.getElementById('btn-detective-hint').disabled = true;
+            if (!myPlayer.historyHints.includes(`[탐정] ${extraHint}`)) myPlayer.historyHints.push(`[탐정] ${extraHint}`);
+            
+            let detBtn = document.getElementById('btn-detective-hint');
+            detBtn.disabled = true;
+            detBtn.innerText = "🕵️ 이번 라운드 힌트 열람 완료";
         }
     }
 
@@ -803,7 +784,6 @@
       
       const secret = gameState.secretPassword || "1234"; 
       
-      // [수정4] 우승 감지 로직
       if (input === secret) {
           gameState.players[myPlayer.name].isWinner = true;
           syncPlayerState();
@@ -828,7 +808,6 @@
       document.getElementById('deduction-results-area').classList.remove('hidden');
       document.getElementById('deduction-input').value = "";
       
-      // [수정2] 내 기록 모달에 저장
       myPlayer.historyGuesses.push(logString);
       
       let attempts = parseInt(document.getElementById('deduction-attempts').innerText);
@@ -848,10 +827,15 @@
       else area.innerHTML = `<p class="text-slate-400 py-4">다음 전략을 구상하세요.</p>`;
     }
 
+    // [수정2] 로컬 초기화 시 BGM 종료 및 팝업/버튼 숨김
     function resetToLobbyLocal() {
       clearInterval(timerInterval);
       myPlayer = { name: "", role: "", isAI: false, detectiveHints: 3, historyHints: [], historyGuesses: [] };
       isAdmin = false;
+      
+      if (isBgmPlaying) toggleBGM();
+      document.getElementById('bgm-toggle').classList.add('hidden');
+      
       document.getElementById('screen-game').classList.add('hidden');
       document.getElementById('stage-gameover').classList.add('hidden');
       document.getElementById('stage-final-winner').classList.add('hidden');
@@ -863,6 +847,8 @@
       document.getElementById('login-name').value = '';
       document.getElementById('login-admin-pw').value = '';
       document.getElementById('admin-next-btn').disabled = false;
+      closeHistory();
+      closeRules();
     }
   </script>
 </body>
