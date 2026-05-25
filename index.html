@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>비밀번호 레이스 (수학 추리)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase SDK 라이브러리 추가 -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <style>
@@ -21,16 +20,21 @@
       100% { transform: scale(1); opacity: 1; }
     }
     .animate-pop { animation: pop 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+    
+    /* 문제 카드 내부의 input 화살표 숨기기 */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center p-4">
 
-  <!-- 헤더 -->
   <header class="w-full max-w-5xl flex justify-between items-start py-4 border-b border-slate-700 mb-6 relative">
     <div>
-      <h1 class="text-2xl font-bold text-sky-400">비밀번호 레이스 <span class="text-sm text-slate-400">v3.1 (관리자 BGM & 탐정 밸런스 패치)</span></h1>
+      <h1 class="text-2xl font-bold text-sky-400">비밀번호 레이스 <span class="text-sm text-slate-400">v3.2 (바둑판 & 탐정 팝업 패치)</span></h1>
       <div id="network-status" class="inline-block mt-1 text-xs px-2 py-0.5 bg-rose-900 text-rose-300 rounded shadow">오프라인 (API 키 미등록)</div>
-      <!-- [수정2] BGM 버튼 기본 숨김 처리 -->
       <button onclick="toggleBGM()" id="bgm-toggle" class="hidden ml-2 inline-block text-xs px-2 py-0.5 bg-slate-700 hover:bg-slate-600 text-white rounded shadow cursor-pointer">
         🔇 BGM OFF
       </button>
@@ -52,7 +56,6 @@
     </div>
   </header>
 
-  <!-- 기록 열람 모달 (내 힌트 & 추리 기록) -->
   <div id="history-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden px-4">
     <div class="bg-slate-800 border border-slate-600 rounded-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-8 relative shadow-2xl">
       <button onclick="closeHistory()" class="absolute top-4 right-5 text-slate-400 hover:text-white text-4xl leading-none">&times;</button>
@@ -74,7 +77,6 @@
     </div>
   </div>
 
-  <!-- 게임 규칙 모달 -->
   <div id="rules-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden px-4">
     <div class="bg-slate-800 border border-slate-600 rounded-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-8 relative shadow-2xl">
       <button onclick="closeRules()" class="absolute top-4 right-5 text-slate-400 hover:text-white text-4xl leading-none">&times;</button>
@@ -96,7 +98,7 @@
           <h3 class="text-xl font-bold text-fuchsia-400 mb-2">🎭 직업별 특수 능력</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
             <div class="bg-slate-900 p-3 rounded"><strong>🔮 예언가:</strong> 우승자 예측 성공 시 2번 추리 기회 획득.</div>
-            <div class="bg-slate-900 p-3 rounded"><strong>🕵️ 탐정:</strong> 게임 중 단 3번, 남들보다 더 많은 비밀 힌트 열람. (라운드당 1회 제한)</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>🕵️ 탐정:</strong> 게임 중 단 3번, 남들보다 더 많은 비밀 힌트 열람. (라운드당 1회)</div>
             <div class="bg-slate-900 p-3 rounded"><strong>😎 정보원:</strong> 게임 시작 시 비밀번호에 절대 없는 숫자 2개 획득.</div>
             <div class="bg-slate-900 p-3 rounded"><strong>🌀 닥터 스트레인지:</strong> 단 1번, 이전 우승자의 힌트/제출 기록 열람.</div>
             <div class="bg-slate-900 p-3 rounded"><strong>💥 훼방꾼:</strong> 단 1번, 우승자의 기회 강탈 (본인 3회 제출).</div>
@@ -113,7 +115,6 @@
     </div>
   </div>
 
-  <!-- 1. 로그인 화면 -->
   <main id="screen-login" class="w-full max-w-md bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700">
     <h2 class="text-xl font-bold mb-6 text-center">게임 접속</h2>
     <div class="mb-6 pb-6 border-b border-slate-700">
@@ -131,7 +132,6 @@
     </div>
   </main>
 
-  <!-- 2. 대기실 -->
   <main id="screen-lobby" class="w-full max-w-4xl bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 hidden">
     <h2 class="text-2xl font-bold mb-2">대기실 (역할 선택)</h2>
     <p class="text-slate-400 mb-6">원하는 특수 능력을 읽어보고 선택하세요. 한 명당 하나의 역할만 가능합니다.</p>
@@ -139,7 +139,6 @@
     <div class="text-center mt-8"><p class="text-yellow-400 animate-pulse" id="waiting-msg">관리자가 게임을 시작할 때까지 대기해주세요...</p></div>
   </main>
 
-  <!-- 3. 관리자 패널 -->
   <main id="screen-admin" class="w-full max-w-4xl bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 hidden mb-6">
     <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
       <h2 class="text-2xl font-bold text-rose-400">교실 중앙 컨트롤 패널</h2>
@@ -162,7 +161,6 @@
     </div>
   </main>
 
-  <!-- 4. 게임 메인 화면 -->
   <main id="screen-game" class="w-full max-w-5xl hidden relative">
     
     <div class="bg-slate-800 p-4 rounded-xl flex justify-between items-center mb-4 border border-slate-700 shadow-md">
@@ -171,7 +169,6 @@
       <div class="text-3xl font-mono font-bold text-white" id="game-timer">00:00</div>
     </div>
 
-    <!-- 4-1. 문제풀이 스테이지 -->
     <div id="stage-problem" class="bg-slate-800 p-6 rounded-xl border border-slate-700 hidden relative overflow-hidden">
       <div id="problem-countdown" class="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/95 flex-col hidden backdrop-blur-sm">
         <div class="text-2xl text-slate-300 mb-4 font-bold">문제 풀이 준비...</div>
@@ -180,38 +177,15 @@
 
       <h3 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2 flex justify-between">
         <span>문제풀이 (해독 스테이지)</span>
-        <span class="text-sm font-normal text-slate-400 mt-1">숫자 키패드를 이용해 입력하세요</span>
       </h3>
       
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-        <div id="problem-list" class="space-y-3 max-h-[50vh] overflow-y-auto pr-2"></div>
-        <div class="bg-slate-900 p-6 rounded-xl flex flex-col items-center justify-center h-fit border border-slate-700 shadow-inner">
-          <div class="text-lg text-sky-300 mb-4 font-bold bg-slate-800 px-4 py-2 rounded-full w-full text-center">
-            현재 입력 중: <span id="active-prob-num" class="text-white">선택된 문제 없음</span>
-          </div>
-          <div class="grid grid-cols-3 gap-3 w-full max-w-[240px]">
-            <button onclick="numpadPress('1')" class="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 text-2xl font-bold active:bg-slate-500 transition">1</button>
-            <button onclick="numpadPress('2')" class="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 text-2xl font-bold active:bg-slate-500 transition">2</button>
-            <button onclick="numpadPress('3')" class="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 text-2xl font-bold active:bg-slate-500 transition">3</button>
-            <button onclick="numpadPress('4')" class="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 text-2xl font-bold active:bg-slate-500 transition">4</button>
-            <button onclick="numpadPress('5')" class="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 text-2xl font-bold active:bg-slate-500 transition">5</button>
-            <button onclick="numpadPress('6')" class="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 text-2xl font-bold active:bg-slate-500 transition">6</button>
-            <button onclick="numpadPress('7')" class="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 text-2xl font-bold active:bg-slate-500 transition">7</button>
-            <button onclick="numpadPress('8')" class="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 text-2xl font-bold active:bg-slate-500 transition">8</button>
-            <button onclick="numpadPress('9')" class="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 text-2xl font-bold active:bg-slate-500 transition">9</button>
-            <button onclick="numpadPress('-')" class="bg-indigo-700 p-4 rounded-lg hover:bg-indigo-600 text-2xl font-bold active:bg-indigo-500 transition text-indigo-100">-</button>
-            <button onclick="numpadPress('0')" class="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 text-2xl font-bold active:bg-slate-500 transition">0</button>
-            <button onclick="numpadPress('C')" class="bg-rose-700 p-4 rounded-lg hover:bg-rose-600 text-2xl font-bold active:bg-rose-500 transition text-rose-100">C</button>
-          </div>
-        </div>
-      </div>
+      <div id="problem-list" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
       
       <button onclick="submitProblems()" id="btn-submit-problems" class="w-full bg-sky-500 hover:bg-sky-600 font-bold py-4 rounded-xl text-white text-xl shadow-lg transition">
         정답 제출하기
       </button>
     </div>
 
-    <!-- 4-1-B. 문제풀이 종료 결과 -->
     <div id="stage-problem-result" class="bg-slate-800 p-6 rounded-xl border border-slate-700 hidden text-center">
       <h3 class="text-2xl font-bold text-emerald-400 mb-4">문제풀이 종료!</h3>
       <p class="text-lg mb-2">내 점수: <span id="my-score" class="font-bold text-yellow-300">0</span> / 9</p>
@@ -221,7 +195,6 @@
       <p class="text-sm text-slate-400 mt-4 animate-pulse">곧 추리 스테이지가 시작됩니다.</p>
     </div>
 
-    <!-- 4-2. 비밀번호 추리 스테이지 -->
     <div id="stage-deduction" class="bg-slate-800 p-6 rounded-xl border border-slate-700 hidden">
       <h3 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2 text-fuchsia-400">비밀번호 추리 스테이지</h3>
       
@@ -252,14 +225,12 @@
       </div>
     </div>
 
-    <!-- 4-3. 정비 시간 스테이지 -->
     <div id="stage-prep" class="bg-slate-800 p-6 rounded-xl border border-slate-700 hidden">
       <h3 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2 text-amber-400">정비 시간 (전략 및 능동)</h3>
       <p class="mb-4 text-slate-300">이전 라운드의 결과를 분석하고, 다음 라운드를 위한 특수 능력을 예약하세요.</p>
       <div id="prep-ability-area" class="bg-slate-900 p-6 rounded border border-slate-600 text-center"></div>
     </div>
 
-    <!-- 4-5. 최종 우승자 축하 화면 -->
     <div id="stage-final-winner" class="bg-slate-800 p-12 rounded-xl border-4 border-yellow-400 hidden text-center relative overflow-hidden shadow-[0_0_50px_rgba(250,204,21,0.3)]">
       <div class="absolute inset-0 bg-[url('https://cdn.pixabay.com/photo/2021/09/12/08/33/confetti-6617637_1280.png')] bg-cover bg-center opacity-30 animate-pulse"></div>
       <h2 class="text-5xl font-extrabold text-yellow-300 mb-6 relative z-10 animate-pop">🎉 정답 해독 완료! 🎉</h2>
@@ -271,7 +242,6 @@
       </button>
     </div>
 
-    <!-- 전체 게임 종료 화면 (해독자 없음) -->
     <div id="stage-gameover" class="bg-slate-800 p-8 rounded-xl border border-slate-700 hidden text-center">
       <h3 class="text-3xl font-bold text-rose-400 mb-6">모든 라운드 종료! (해독자 없음)</h3>
       <p class="text-xl mb-4">비밀번호 정답은 <span id="final-password" class="font-mono font-bold text-yellow-300 text-3xl"></span> 였습니다.</p>
@@ -326,7 +296,6 @@
 
     let gameState = { round: 0, stage: 'LOBBY', secretPassword: "", hintsData: [], players: {}, finalWinners: [] };
     let myPlayer = { name: "", role: "", isAI: false, detectiveHints: 3, historyHints: [], historyGuesses: [] };
-    // [수정1] 탐정 라운드당 1회 힌트 사용 변수
     let usedDetectiveHintThisRound = false;
     
     let isAdmin = false; let timerInterval = null;
@@ -342,20 +311,6 @@
       guessList.innerHTML = myPlayer.historyGuesses.length > 0 ? myPlayer.historyGuesses.map(g => `<li class="mb-1">${g}</li>`).join('') : `<li class="text-slate-500">아직 제출한 추리 기록이 없습니다.</li>`;
     }
     function closeHistory() { document.getElementById('history-modal').classList.add('hidden'); }
-
-    let activeInputId = null;
-    function setActiveInput(id, num) {
-      activeInputId = id; document.getElementById('active-prob-num').innerText = num + "번 문제";
-      document.querySelectorAll('#problem-list input').forEach(el => el.classList.remove('border-amber-400', 'border-2'));
-      document.getElementById(id).classList.add('border-amber-400', 'border-2');
-    }
-    function numpadPress(val) {
-      if(!activeInputId) return;
-      let el = document.getElementById(activeInputId);
-      if(val === 'C') el.value = '';
-      else if(val === '-') { if(el.value.includes('-')) el.value = el.value.replace('-',''); else el.value = '-' + el.value; }
-      else el.value += val;
-    }
 
     function resetSystemFromLogin() {
       const pw = document.getElementById('login-admin-pw').value;
@@ -376,8 +331,13 @@
     }
 
     function syncGameStateFromAdmin() {
-      if (useFirebase) db.collection("race_rooms").doc("room1").set({ stage: gameState.stage, round: gameState.round, secretPassword: gameState.secretPassword, hintsData: gameState.hintsData, finalWinners: gameState.finalWinners || [] }, { merge: true });
-      else { let saved = JSON.parse(localStorage.getItem("race_gameState") || "{}"); saved.stage = gameState.stage; saved.round = gameState.round; saved.secretPassword = gameState.secretPassword; saved.hintsData = gameState.hintsData; saved.finalWinners = gameState.finalWinners || []; localStorage.setItem("race_gameState", JSON.stringify(saved)); }
+      if (useFirebase) {
+        db.collection("race_rooms").doc("room1").set({ stage: gameState.stage, round: gameState.round, secretPassword: gameState.secretPassword, hintsData: gameState.hintsData, finalWinners: gameState.finalWinners || [] }, { merge: true });
+      } else {
+        let saved = JSON.parse(localStorage.getItem("race_gameState") || "{}");
+        saved.stage = gameState.stage; saved.round = gameState.round; saved.secretPassword = gameState.secretPassword; saved.hintsData = gameState.hintsData; saved.finalWinners = gameState.finalWinners || [];
+        localStorage.setItem("race_gameState", JSON.stringify(saved));
+      }
     }
 
     function initSyncListener() {
@@ -461,7 +421,6 @@
         gameState.secretPassword = digits.slice(0, 4).join('');
         gameState.hintsData = generateLogicalHints(gameState.secretPassword);
         
-        // [수정2] 관리자 모드에서만 BGM 버튼 보이고 재생
         document.getElementById('bgm-toggle').classList.remove('hidden');
         syncGameStateFromAdmin(); autoStartBGM();
       } else { alert("비밀번호가 틀렸습니다."); }
@@ -479,7 +438,6 @@
       document.getElementById('screen-login').classList.add('hidden');
       document.getElementById('screen-lobby').classList.remove('hidden');
       renderRoles(); 
-      // [수정2] 참가자 화면에서는 BGM 재생하지 않음
     }
 
     function renderRoles() {
@@ -551,15 +509,15 @@
       return problems;
     }
 
+    // [수정1] 바둑판 레이아웃
     function renderProblems() {
       const list = document.getElementById('problem-list'); list.innerHTML = '';
       window.currentProblems = generateMathProblems();
       window.currentProblems.forEach(p => {
         let ph = p.type === 'ox' ? "1=O, 2=X" : "정답";
-        let inputHtml = `<input type="number" id="prob-${p.num}" onfocus="setActiveInput('prob-${p.num}', ${p.num})" class="w-24 p-2 rounded bg-slate-900 border border-slate-600 text-center font-bold text-lg focus:outline-none transition" placeholder="${ph}">`;
-        list.innerHTML += `<div class="flex items-center justify-between bg-slate-700 p-3 rounded-lg shadow-sm"><span class="font-bold text-sky-300 w-8 text-lg">${p.num}.</span><span class="flex-1 px-3 text-sm">${p.text}</span>${inputHtml}</div>`;
+        let inputHtml = `<input type="number" id="prob-${p.num}" class="w-full mt-2 p-2 rounded bg-slate-900 border border-slate-600 text-center font-bold text-lg focus:outline-none focus:border-sky-500 transition" placeholder="${ph}">`;
+        list.innerHTML += `<div class="bg-slate-700 p-4 rounded-lg shadow-sm flex flex-col justify-between"><div class="flex items-start mb-2"><span class="font-bold text-sky-300 mr-2 text-lg">${p.num}.</span><span class="text-sm leading-tight">${p.text}</span></div>${inputHtml}</div>`;
       });
-      setTimeout(() => { if(document.getElementById('prob-1')) setActiveInput('prob-1', 1); }, 100);
     }
 
     function startTimer(seconds, onComplete) {
@@ -680,7 +638,6 @@
         document.getElementById('deduction-results-list').innerHTML = '';
         document.getElementById('informant-message').classList.add('hidden');
         
-        // [수정1] 탐정 힌트 초기화
         usedDetectiveHintThisRound = false;
 
         let winnerName = calculateWinner();
@@ -702,7 +659,6 @@
             hintsUl.innerHTML = `<li class="text-rose-400 font-bold">❌ 해독에 실패하여 공통 힌트를 획득하지 못했습니다.</li>`;
         }
 
-        // [수정1] 탐정 버튼 렌더링
         if (myPlayer.role === '탐정') {
             document.getElementById('detective-area').classList.remove('hidden');
             document.getElementById('detective-count').innerText = myPlayer.detectiveHints;
@@ -755,7 +711,7 @@
       document.getElementById('round-winner').innerText = calculateWinner();
     }
 
-    // [수정1] 탐정 힌트 사용 시 라운드당 1회 제한 로직
+    // [수정2] 탐정 힌트 팝업 알림창(alert) 추가
     function useDetectiveHint() {
         if (usedDetectiveHintThisRound) {
             alert("이번 라운드에서는 이미 추가 힌트를 열람했습니다.");
@@ -764,7 +720,7 @@
 
         if (myPlayer.detectiveHints > 0) {
             myPlayer.detectiveHints--;
-            usedDetectiveHintThisRound = true; // 깃발 세우기
+            usedDetectiveHintThisRound = true;
 
             document.getElementById('detective-count').innerText = myPlayer.detectiveHints;
             let extraHint = gameState.hintsData[10 + myPlayer.detectiveHints]; 
@@ -775,6 +731,9 @@
             let detBtn = document.getElementById('btn-detective-hint');
             detBtn.disabled = true;
             detBtn.innerText = "🕵️ 이번 라운드 힌트 열람 완료";
+
+            // [수정2] 화면 중앙 팝업으로 힌트 강력 제시
+            alert(`🕵️ [탐정 전용 추가 힌트]\n\n${extraHint}`);
         }
     }
 
@@ -827,7 +786,6 @@
       else area.innerHTML = `<p class="text-slate-400 py-4">다음 전략을 구상하세요.</p>`;
     }
 
-    // [수정2] 로컬 초기화 시 BGM 종료 및 팝업/버튼 숨김
     function resetToLobbyLocal() {
       clearInterval(timerInterval);
       myPlayer = { name: "", role: "", isAI: false, detectiveHints: 3, historyHints: [], historyGuesses: [] };
@@ -846,9 +804,8 @@
       document.getElementById('btn-history-top').classList.add('hidden');
       document.getElementById('login-name').value = '';
       document.getElementById('login-admin-pw').value = '';
-      document.getElementById('admin-next-btn').disabled = false;
-      closeHistory();
-      closeRules();
+      if(document.getElementById('admin-next-btn')) document.getElementById('admin-next-btn').disabled = false;
+      closeHistory(); closeRules();
     }
   </script>
 </body>
