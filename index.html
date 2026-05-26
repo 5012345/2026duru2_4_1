@@ -262,7 +262,7 @@
     // 시스템 변수 및 동기화 설정
     // ==========================================
     let useFirebase = false; let db = null;
-        const firebaseConfig = {
+    const firebaseConfig = {
       apiKey: "AIzaSyDX5TiB78wqtnzgwgOpfnEv7f0hcN0L4LU",
       authDomain: "duru20401-b60fa.firebaseapp.com",
       projectId: "duru20401-b60fa",
@@ -270,7 +270,6 @@
       messagingSenderId: "790407879385",
       appId: "1:790407879385:web:c1bce54aa1d470951ebcc8",
     };
-
     if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("API_KEY_입력")) {
       firebase.initializeApp(firebaseConfig); db = firebase.firestore(); useFirebase = true;
       let netStatus = document.getElementById('network-status');
