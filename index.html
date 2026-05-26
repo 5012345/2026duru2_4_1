@@ -29,7 +29,7 @@
 
   <header class="w-full max-w-5xl flex justify-between items-start py-4 border-b border-slate-700 mb-6 relative">
     <div>
-      <h1 class="text-2xl font-bold text-sky-400">비밀번호 레이스 <span class="text-sm text-slate-400">v6.1 (자동화 스케줄링 패치)</span></h1>
+      <h1 class="text-2xl font-bold text-sky-400">비밀번호 레이스 <span class="text-sm text-slate-400">v6.2 (타이머 오류 완벽 패치)</span></h1>
       <div id="network-status" class="inline-block mt-1 text-xs px-2 py-0.5 bg-rose-900 text-rose-300 rounded shadow">오프라인 (API 키 미등록)</div>
     </div>
     
@@ -89,7 +89,7 @@
     <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
       <h2 class="text-2xl font-bold text-rose-400">교실 중앙 컨트롤 패널</h2>
       <div class="flex items-center space-x-4">
-        <div class="text-3xl font-mono font-bold text-sky-300" id="admin-timer">00:00</div>
+        <div class="text-3xl font-mono font-bold text-sky-300" id="admin-timer">남은시간: 00:00</div>
         <div class="text-sm text-slate-400">자동 진행 스케줄러 가동 중</div>
       </div>
     </div>
@@ -101,11 +101,9 @@
       <div class="bg-slate-900 p-4 rounded flex flex-col justify-center items-center relative min-h-[300px]">
         <h3 class="font-bold text-yellow-300 mb-4 text-center">게임 진행 제어</h3>
         <div id="admin-round-info" class="text-2xl mb-6 font-bold text-white">대기 중</div>
-        
         <button onclick="adminStartGame()" id="admin-next-btn" class="w-full max-w-xs bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-5 rounded-xl text-xl transition shadow-lg">
           게임 시작하기
         </button>
-        
         <button onclick="resetSystemFromLogin()" class="absolute top-2 right-2 text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded hover:bg-rose-700 hover:text-white transition">전체 초기화</button>
       </div>
     </div>
@@ -116,7 +114,7 @@
     <div class="bg-slate-800 p-4 rounded-xl flex justify-between items-center mb-4 border border-slate-700 shadow-md">
       <div class="text-xl font-bold text-sky-400" id="game-round-display">Round 1</div>
       <div class="text-lg font-medium text-amber-300" id="game-stage-display">대기 중</div>
-      <div class="text-3xl font-mono font-bold text-white" id="game-timer">00:00</div>
+      <div class="text-2xl font-mono font-bold text-white" id="game-timer">남은시간: 00:00</div>
     </div>
 
     <div id="stage-problem" class="bg-slate-800 p-6 rounded-xl border border-slate-700 hidden relative overflow-hidden">
@@ -149,7 +147,7 @@
 
       <div id="detective-area" class="hidden flex justify-center mb-6">
         <button onclick="useDetectiveHint()" id="btn-detective-hint" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-6 rounded-full shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
-          </button>
+        </button>
       </div>
 
       <div id="wizard-area" class="hidden flex flex-col items-center mb-6">
@@ -171,12 +169,13 @@
         <button onclick="submitDeduction()" id="btn-submit-deduction" class="mt-4 w-64 bg-fuchsia-600 hover:bg-fuchsia-500 font-bold py-4 rounded-xl text-white text-xl transition shadow-lg">추리 제출</button>
       </div>
 
-      <div id="deduction-results-area" class="bg-slate-900 p-4 rounded border border-slate-700 hidden text-xs font-mono max-h-[120px] overflow-y-auto">
-        <ul id="deduction-results-list" class="space-y-1"></ul>
+      <div id="deduction-results-area" class="bg-slate-900 p-4 rounded border border-slate-700 hidden">
+        <h4 class="font-bold text-emerald-300 mb-2">제출 결과</h4>
+        <ul id="deduction-results-list" class="space-y-2 font-mono text-lg"></ul>
       </div>
     </div>
 
-    <div id="stage-prep" class="bg-slate-800 p-6 rounded-xl border border-slate-700 hidden text-center">
+    <div id="stage-prep" class="bg-slate-800 p-6 rounded-xl border border-slate-700 hidden">
       <h3 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2 text-amber-400">3스테이지 (정비 시간)</h3>
       <p class="mb-4 text-slate-300 text-center">이전 라운드의 결과를 분석하고, 다음 라운드를 위한 특수 능력을 발동/예약하세요.</p>
       <div id="prep-ability-area" class="bg-slate-900 p-6 rounded border border-slate-600 flex flex-col items-center justify-center min-h-[150px]"></div>
@@ -221,7 +220,7 @@
       netStatus.className = "inline-block mt-1 text-xs px-2 py-0.5 bg-emerald-900 text-emerald-300 rounded font-bold shadow"; netStatus.innerText = "온라인 (실시간 DB 연동)";
     }
 
-    let gameState = { round: 0, stage: 'LOBBY', secretPassword: "", hintsData: [], players: {}, finalWinners: [], globalGuesses: [], lastWinnerGuesses: [] };
+    let gameState = { round: 0, stage: 'LOBBY', secretPassword: "", hintsData: [], players: {}, finalWinners: [], globalGuesses: [], lastWinnerGuesses: [], timer: 0 };
     let myPlayer = { name: "", role: "", isAI: false, detectiveHints: 2, historyHints: [], historyGuesses: [], usedGambler: false, usedMindReader: false, usedWizard: false, prophetGuess: 0, gamblerActive: false };
     let usedDetectiveHintThisRound = false;
     let isAdmin = false; let timerInterval = null;
@@ -237,7 +236,7 @@
       const pw = document.getElementById('login-admin-pw').value;
       if (pw !== "2525" && !isAdmin) return alert("관리자 비밀번호를 입력하세요.");
       if (!confirm("⚠️ 전체 시스템 데이터를 삭제하고 접속자를 퇴장시킵니다.")) return;
-      let emptyState = { stage: 'LOBBY', round: 0, players: {}, secretPassword: "", hintsData: [], finalWinners: [], globalGuesses: [], lastWinnerGuesses: [] };
+      let emptyState = { stage: 'LOBBY', round: 0, players: {}, secretPassword: "", hintsData: [], finalWinners: [], globalGuesses: [], lastWinnerGuesses: [], timer: 0 };
       if (useFirebase) db.collection("race_v5").doc("room1").set(emptyState); else localStorage.setItem("race_v5_data", JSON.stringify(emptyState));
       alert("초기화 완료"); if(isAdmin) resetToLobbyLocal();
     }
@@ -247,6 +246,7 @@
       else { let saved = JSON.parse(localStorage.getItem("race_v5_data") || "{}"); saved.players = saved.players || {}; saved.players[myPlayer.name] = gameState.players[myPlayer.name]; localStorage.setItem("race_v5_data", JSON.stringify(saved)); }
     }
 
+    // 관리자 전파용 함수
     function syncGameStateFromAdmin() {
       if (useFirebase) db.collection("race_v5").doc("room1").set(gameState, { merge: true });
       else localStorage.setItem("race_v5_data", JSON.stringify(gameState));
@@ -264,6 +264,11 @@
       
       gameState = { ...gameState, ...data };
       gameState.players = data.players || {};
+
+      // 실시간 시계값 매칭 동기화
+      if (!isAdmin && data.timer !== undefined) {
+          updateTimerUI();
+      }
 
       if (isAdmin) renderAdminDynamicView();
       else if (myPlayer.name !== "" && !gameState.players[myPlayer.name]) { alert("⚠️ 게임이 초기화되었거나 퇴장되었습니다."); resetToLobbyLocal(); return; }
@@ -333,9 +338,6 @@
       return hints.sort(() => Math.random() - 0.5);
     }
 
-    // ==========================================
-    // 역할 리스트 및 설정
-    // ==========================================
     const ROLE_DETAILS = [
       { name: "탐정", icon: "🕵️", desc: "2스테이지에서 추가 힌트 열람 (총 2회, 1R당 1회)" },
       { name: "첩보원", icon: "😎", desc: "1라운드 2스테이지 시작 시 없는 숫자 2개 안내" },
@@ -345,7 +347,7 @@
       { name: "도박사", icon: "🎲", desc: "3스테이지에서 베팅(1회용), 본인 우승 시 힌트 2개 획득" },
       { name: "수학자", icon: "🧮", desc: "짝수 라운드 1스테이지의 5번 문제 비활성화 (만점 인정)" },
       { name: "마법사", icon: "🧙", desc: "3라운드 2스테이지에서 원하는 1자리의 숫자 정확히 파악" },
-      { name: "마음을 읽는 자", icon: "🧠", desc: "3스테이지에서 직전 라운드 우승자의 추리 내역 훔치기 (1회용)" }
+      { name: "마음을 읽는 자", icon: "🧠", desc: "3스테이지에서 이번 라운드 우승자의 추리 내역 훔치기 (1회용)" }
     ];
 
     function loginAdmin() {
@@ -394,9 +396,6 @@
       gameState.players[myPlayer.name].role = roleName; syncPlayerState(); 
     }
 
-    // ==========================================
-    // 관리자 대시보드
-    // ==========================================
     function renderAdminDynamicView() {
       if (!isAdmin) return;
       const container = document.getElementById('admin-dynamic-view');
@@ -460,29 +459,18 @@
         return bestPlayer || "없음";
     }
 
-    function renderProblems() {
-      const list = document.getElementById('problem-list'); list.innerHTML = '';
-      window.currentProblems = generateMathProblems();
-      window.currentProblems.forEach(p => {
-        let isPass = (myPlayer.role === '수학자' && gameState.round % 2 === 0 && p.num === 5);
-        let inputHtml = isPass 
-            ? `<input type="text" id="prob-${p.num}" value="${p.answer}" readonly class="w-full mt-2 p-2 rounded bg-emerald-950 border border-emerald-500 text-center font-bold text-lg text-emerald-400">`
-            : `<input type="number" id="prob-${p.num}" class="w-full mt-2 p-2 rounded bg-slate-900 border border-slate-600 text-center font-bold text-lg focus:outline-none focus:border-sky-500 transition" placeholder="${p.type === 'ox' ? '1=O, 2=X' : '정답'}">`;
-        list.innerHTML += `<div class="bg-slate-700 p-4 rounded-lg shadow-sm flex flex-col justify-between"><div class="flex items-start mb-2"><span class="font-bold text-sky-300 mr-2 text-lg">${p.num}.</span><span class="text-sm leading-tight">${p.text}</span></div>${inputHtml}</div>`;
-      });
-    }
-
-// 1. 기존의 startTimer 함수를 아래 코드로 완전히 교체하세요.
+    // ==========================================
+    // [수정 및 오류 수정] 타이머 제어 핵심 패치 구역
+    // ==========================================
     function startTimer(seconds, onComplete) {
       clearInterval(timerInterval);
       gameState.timer = seconds;
-      updateTimerUI(); // 시작하자마자 UI 즉시 갱신
+      updateTimerUI(); // 시작 즉시 표시
       
       timerInterval = setInterval(() => {
         gameState.timer--;
-        updateTimerUI(); // 1초마다 참가자 및 관리자 시계 갱신
+        updateTimerUI(); // 1초 단위 동기화 반영
         
-        // 관리자라면 주기적으로 서버(또는 로컬스토리지)에 남은 시간 전파
         if (isAdmin && gameState.timer % 2 === 0) {
           syncGameStateFromAdmin();
         }
@@ -494,7 +482,6 @@
       }, 1000);
     }
 
-    // 2. 기존의 updateTimerUI 함수를 아래 코드로 완전히 교체하세요.
     function updateTimerUI() {
       let currentTimerValue = gameState.timer ?? 0;
       if (currentTimerValue < 0) currentTimerValue = 0;
@@ -502,28 +489,22 @@
       let m = Math.floor(currentTimerValue / 60).toString().padStart(2, '0');
       let s = (currentTimerValue % 60).toString().padStart(2, '0');
       
-      // 참가자(학생) 화면 시계 반영
       let gTimer = document.getElementById('game-timer');
       if (gTimer) gTimer.innerText = `남은시간: ${m}:${s}`;
       
-      // 관리자 화면 시계 반영
       let aTimer = document.getElementById('admin-timer');
       if (aTimer) aTimer.innerText = `남은시간: ${m}:${s}`;
-    }    function hideAllStages() {
-      ['stage-problem', 'stage-problem-result', 'stage-deduction', 'stage-prep', 'stage-gameover', 'stage-final-winner'].forEach(id => document.getElementById(id).classList.add('hidden'));
     }
 
     // ==========================================
     // 스테이지 제어 (자동화 스케줄링)
     // ==========================================
-    // 관리자가 최초 버튼을 누르면 시작
     function adminStartGame() {
         if(gameState.stage !== 'LOBBY') return;
         gameState.round = 0;
         adminTransitionTo('PROBLEM');
     }
 
-    // 모든 스테이지 전환은 이 함수가 총괄하고 서버에 전파
     function adminTransitionTo(nextStage) {
         gameState.stage = nextStage;
         if (nextStage === 'PROBLEM') {
@@ -533,6 +514,7 @@
                 gameState.players[p].score = 0;
                 gameState.players[p].submitTime = Infinity;
                 gameState.players[p].deductionSubmittedCount = 0;
+                gameState.players[p].isWinner = false;
             }
         } else if (nextStage === 'DEDUCTION') {
             gameState.lastWinnerGuesses = [];
@@ -543,7 +525,6 @@
     function triggerStageClient(stage) {
       document.getElementById('screen-lobby').classList.add('hidden');
       
-      // 관리자 UI 관리
       if (isAdmin) {
           if (stage === 'LOBBY') {
               document.getElementById('admin-next-btn').classList.remove('hidden');
@@ -587,7 +568,7 @@
         if(gameState.players[myPlayer.name]) gameState.players[myPlayer.name].submitTime = Infinity;
         
         let cdOverlay = document.getElementById('problem-countdown'); let cdNum = document.getElementById('countdown-number');
-        let stageTotalTime = 95; // 90초 + 5초 대기
+        let stageTotalTime = 95; 
         
         if (!isAdmin) {
             if (myPlayer.role === '시간도둑') {
@@ -703,6 +684,7 @@
       else if (stage === 'PREP') {
         document.getElementById('game-stage-display').innerText = "3스테이지 (정비 시간)"; document.getElementById('stage-prep').classList.remove('hidden');
         if(!isAdmin) setupPrepUI(); 
+        document.getElementById('deduction-input').value = ""; // 입력 패널 버퍼 초기화
         startTimer(30, () => { if(isAdmin) adminTransitionTo('PROBLEM'); }); 
       }
     }
@@ -751,7 +733,7 @@
     }
 
     function submitDeduction() {
-      const input = document.getElementById('deduction-input').value;
+      const input = document.getElementById('deduction-input').value.trim();
       if(input.length !== 4) return alert("4자리 숫자를 입력하세요.");
       
       const secret = gameState.secretPassword || "1234"; 
@@ -799,7 +781,6 @@
 
     function setupPrepUI() {
       const area = document.getElementById('prep-ability-area'); area.innerHTML = '';
-      let playerOptions = Object.keys(gameState.players).filter(p=>p !== myPlayer.name).map(p=>`<option value="${p}">${p}</option>`).join('');
       
       if (myPlayer.role === '예언가') {
         area.innerHTML = `<h4 class="text-lg font-bold text-sky-400 mb-2">🔮 예언가</h4><p class="text-sm mb-3">다음 라운드 본인의 등수 예측</p><div class="flex gap-2"><label><input type='radio' name='prophet-rank' value='1'> 1위</label><label><input type='radio' name='prophet-rank' value='2'> 2위</label><label><input type='radio' name='prophet-rank' value='3'> 3위</label><label><input type='radio' name='prophet-rank' value='4'> 4위</label><label><input type='radio' name='prophet-rank' value='5'> 5위</label></div><button onclick="applyProphet()" class="mt-3 bg-sky-600 px-4 py-2 rounded font-bold shadow text-white">예측 저장</button>`;
@@ -846,7 +827,7 @@
         alert("🧠 [실패] 이전 라운드에 우승자가 없거나, 우승자가 추리를 제출하지 않았습니다.");
       } else {
         let text = gameState.lastWinnerGuesses.join('\n');
-        alert(`🧠 [우승자 생각 해킹 완료]\n\n직전 라운드 우승자의 추리 내역:\n${text}`);
+        alert(`🧠 [우승자 생각 해킹 완료]\n\n이번 라운드 우승자의 추리 내역:\n${text}`);
         myPlayer.historyHints.push(`[생각훔치기]\n${text}`);
       }
       setupPrepUI();
