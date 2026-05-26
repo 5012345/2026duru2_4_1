@@ -20,12 +20,9 @@
       100% { transform: scale(1); opacity: 1; }
     }
     .animate-pop { animation: pop 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-    
-    /* 문제 카드 내부의 input 화살표 숨기기 */
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
+      -webkit-appearance: none; margin: 0;
     }
   </style>
 </head>
@@ -33,7 +30,7 @@
 
   <header class="w-full max-w-5xl flex justify-between items-start py-4 border-b border-slate-700 mb-6 relative">
     <div>
-      <h1 class="text-2xl font-bold text-sky-400">비밀번호 레이스 <span class="text-sm text-slate-400">v3.2 (바둑판 & 탐정 팝업 패치)</span></h1>
+      <h1 class="text-2xl font-bold text-sky-400">비밀번호 레이스 <span class="text-sm text-slate-400">v4.0 (관리자 대시보드 & 밸런스 패치)</span></h1>
       <div id="network-status" class="inline-block mt-1 text-xs px-2 py-0.5 bg-rose-900 text-rose-300 rounded shadow">오프라인 (API 키 미등록)</div>
       <button onclick="toggleBGM()" id="bgm-toggle" class="hidden ml-2 inline-block text-xs px-2 py-0.5 bg-slate-700 hover:bg-slate-600 text-white rounded shadow cursor-pointer">
         🔇 BGM OFF
@@ -60,19 +57,13 @@
     <div class="bg-slate-800 border border-slate-600 rounded-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-8 relative shadow-2xl">
       <button onclick="closeHistory()" class="absolute top-4 right-5 text-slate-400 hover:text-white text-4xl leading-none">&times;</button>
       <h2 class="text-2xl font-bold text-emerald-400 mb-6 border-b border-slate-600 pb-4">📝 내 기록 열람</h2>
-      
       <div class="mb-6">
         <h3 class="text-lg font-bold text-amber-300 mb-3">💡 획득한 힌트 모음</h3>
-        <ul id="history-hints-list" class="list-disc pl-5 text-slate-200 space-y-2 text-sm bg-slate-900 p-4 rounded-lg">
-          <li class="text-slate-500 list-none">아직 획득한 힌트가 없습니다.</li>
-        </ul>
+        <ul id="history-hints-list" class="list-disc pl-5 text-slate-200 space-y-2 text-sm bg-slate-900 p-4 rounded-lg"></ul>
       </div>
-
       <div>
         <h3 class="text-lg font-bold text-fuchsia-400 mb-3">🔍 과거 추리 내역</h3>
-        <ul id="history-guesses-list" class="space-y-2 font-mono text-sm bg-slate-900 p-4 rounded-lg">
-          <li class="text-slate-500">아직 제출한 추리 기록이 없습니다.</li>
-        </ul>
+        <ul id="history-guesses-list" class="space-y-2 font-mono text-sm bg-slate-900 p-4 rounded-lg"></ul>
       </div>
     </div>
   </div>
@@ -84,12 +75,12 @@
       <div class="space-y-6 text-slate-300">
         <section>
           <h3 class="text-xl font-bold text-emerald-400 mb-2">🎯 게임의 목표</h3>
-          <p class="text-sm leading-relaxed">총 10라운드 동안 수학 문제를 빠르게 풀고 힌트를 얻어, 누구보다 먼저 <strong>'네 자리 비밀번호'</strong>를 해독하는 팀이 승리하는 두뇌/심리 게임입니다.</p>
+          <p class="text-sm leading-relaxed">총 10라운드 동안 수학 문제를 빠르게 풀고 힌트를 얻어, 누구보다 먼저 <strong>'네 자리 비밀번호'</strong>를 해독하는 팀이 승리합니다.</p>
         </section>
         <section>
           <h3 class="text-xl font-bold text-amber-400 mb-2">⏱️ 스테이지 진행 방식</h3>
           <ul class="list-disc pl-5 text-sm space-y-2">
-            <li><strong class="text-white">1단계: 문제풀이 (1분)</strong> 일차함수 9문제 풀이. <strong>가장 점수가 높고 빨리 푼 1등이 우승자.</strong></li>
+            <li><strong class="text-white">1단계: 문제풀이 (80초)</strong> 9문제를 풉니다. <strong>9문제를 모두 맞힌 사람 중 가장 빠른 1등만이 우승자.</strong></li>
             <li><strong class="text-white">2단계: 추리 (2분)</strong> 4자리 숫자 제출. (A:자리와 숫자 일치, B:숫자만 일치). <strong>우승자는 2번 제출.</strong></li>
             <li><strong class="text-white">3단계: 정비 (30초)</strong> 결과 분석 및 다음 라운드 특수 능력 예약.</li>
           </ul>
@@ -98,20 +89,18 @@
           <h3 class="text-xl font-bold text-fuchsia-400 mb-2">🎭 직업별 특수 능력</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
             <div class="bg-slate-900 p-3 rounded"><strong>🔮 예언가:</strong> 우승자 예측 성공 시 2번 추리 기회 획득.</div>
-            <div class="bg-slate-900 p-3 rounded"><strong>🕵️ 탐정:</strong> 게임 중 단 3번, 남들보다 더 많은 비밀 힌트 열람. (라운드당 1회)</div>
-            <div class="bg-slate-900 p-3 rounded"><strong>😎 정보원:</strong> 게임 시작 시 비밀번호에 절대 없는 숫자 2개 획득.</div>
-            <div class="bg-slate-900 p-3 rounded"><strong>🌀 닥터 스트레인지:</strong> 단 1번, 이전 우승자의 힌트/제출 기록 열람.</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>🕵️ 탐정:</strong> 게임 중 단 3번, 추가 힌트 열람. (라운드당 1회)</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>😎 정보원:</strong> 게임 시작 시 정답에 절대 없는 숫자 2개 획득.</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>🌀 닥터 스트레인지:</strong> 단 1번, 이전 우승자의 힌트/기록 열람.</div>
             <div class="bg-slate-900 p-3 rounded"><strong>💥 훼방꾼:</strong> 단 1번, 우승자의 기회 강탈 (본인 3회 제출).</div>
             <div class="bg-slate-900 p-3 rounded"><strong>⏱️ 시간도둑:</strong> 매 라운드 5초 먼저 문제풀이 시작.</div>
             <div class="bg-slate-900 p-3 rounded"><strong>📊 통계학자:</strong> 남들이 제출한 기록 중 A/B 누적 통계 확인.</div>
             <div class="bg-slate-900 p-3 rounded"><strong>🛡️ 성직자:</strong> 훼방꾼 공격 방어, 닥터 스트레인지 타겟 면역.</div>
-            <div class="bg-slate-900 p-3 rounded"><strong>🎲 도박사:</strong> 단 1번 배팅, 우승 시 정답 숫자 1개 획득.</div>
+            <div class="bg-slate-900 p-3 rounded"><strong>🎲 도박사:</strong> 단 1번 배팅, 타겟이 우승 시 정답 숫자 1개 획득.</div>
           </div>
         </section>
       </div>
-      <div class="mt-8 text-center">
-        <button onclick="closeRules()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-8 rounded-full transition shadow-lg">확인했습니다</button>
-      </div>
+      <div class="mt-8 text-center"><button onclick="closeRules()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-8 rounded-full transition">확인했습니다</button></div>
     </div>
   </div>
 
@@ -144,16 +133,17 @@
       <h2 class="text-2xl font-bold text-rose-400">교실 중앙 컨트롤 패널</h2>
       <div class="text-sm text-slate-400">시스템이 자동으로 정답을 숨기고 채점합니다.</div>
     </div>
-    <div class="grid grid-cols-2 gap-4 mb-6">
-      <div class="bg-slate-900 p-4 rounded">
-        <h3 class="font-bold text-sky-300 mb-2">현재 접속자 (최대 9명)</h3>
-        <ul id="admin-player-list" class="text-sm space-y-2 text-slate-300 font-medium"></ul>
-        <button onclick="fillWithAI()" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded text-sm transition">빈 자리 AI봇으로 채우기</button>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      
+      <div class="bg-slate-900 p-4 rounded min-h-[300px]">
+        <div id="admin-dynamic-view" class="h-full flex flex-col">
+          </div>
       </div>
-      <div class="bg-slate-900 p-4 rounded flex flex-col justify-center items-center relative">
+
+      <div class="bg-slate-900 p-4 rounded flex flex-col justify-center items-center relative min-h-[300px]">
         <h3 class="font-bold text-yellow-300 mb-4 text-center">게임 진행 제어</h3>
-        <div id="admin-round-info" class="text-xl mb-4 font-bold">대기 중</div>
-        <button onclick="adminStartNextStage()" id="admin-next-btn" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-4 rounded text-lg transition shadow-lg">
+        <div id="admin-round-info" class="text-2xl mb-6 font-bold text-white">대기 중</div>
+        <button onclick="adminStartNextStage()" id="admin-next-btn" class="w-full max-w-xs bg-rose-500 hover:bg-rose-600 text-white font-bold py-5 rounded-xl text-xl transition shadow-lg">
           1라운드 시작하기
         </button>
         <button onclick="resetSystemFromLogin()" class="absolute top-2 right-2 text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded hover:bg-rose-700 hover:text-white transition">전체 초기화</button>
@@ -174,10 +164,7 @@
         <div class="text-2xl text-slate-300 mb-4 font-bold">문제 풀이 준비...</div>
         <span class="text-9xl font-black text-amber-400 animate-ping drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]" id="countdown-number">5</span>
       </div>
-
-      <h3 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2 flex justify-between">
-        <span>문제풀이 (해독 스테이지)</span>
-      </h3>
+      <h3 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2 flex justify-between"><span>문제풀이 (해독 스테이지)</span></h3>
       
       <div id="problem-list" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
       
@@ -208,6 +195,13 @@
           🕵️ 탐정 전용 추가 힌트 열람 (남은 횟수: <span id="detective-count">3</span>)
         </button>
       </div>
+
+      <div id="strange-area" class="hidden flex justify-center mb-6">
+        <button onclick="useDrStrangeAbility()" id="btn-strange-ability" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-6 rounded-full shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
+          🌀 이전 우승자 기록 열람 (단 1회)
+        </button>
+      </div>
+
       <div id="informant-message" class="hidden p-4 bg-indigo-900 border border-indigo-500 rounded text-indigo-100 font-bold mb-6"></div>
 
       <div class="mb-6 flex flex-col items-center">
@@ -228,7 +222,7 @@
     <div id="stage-prep" class="bg-slate-800 p-6 rounded-xl border border-slate-700 hidden">
       <h3 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2 text-amber-400">정비 시간 (전략 및 능동)</h3>
       <p class="mb-4 text-slate-300">이전 라운드의 결과를 분석하고, 다음 라운드를 위한 특수 능력을 예약하세요.</p>
-      <div id="prep-ability-area" class="bg-slate-900 p-6 rounded border border-slate-600 text-center"></div>
+      <div id="prep-ability-area" class="bg-slate-900 p-6 rounded border border-slate-600 text-center flex flex-col items-center"></div>
     </div>
 
     <div id="stage-final-winner" class="bg-slate-800 p-12 rounded-xl border-4 border-yellow-400 hidden text-center relative overflow-hidden shadow-[0_0_50px_rgba(250,204,21,0.3)]">
@@ -254,30 +248,21 @@
 
   <script>
     // ==========================================
-    // BGM 플레이어 (관리자 모드 전용)
+    // BGM 플레이어
     // ==========================================
     const bgmPlaylist = ['bgm.mp3', 'bgm2.mp3'];
     let currentBgmIndex = 0;
     let bgmAudio = new Audio(bgmPlaylist[currentBgmIndex]);
-    bgmAudio.loop = false;
-    let isBgmPlaying = false;
-
-    bgmAudio.addEventListener('ended', () => {
-        currentBgmIndex = (currentBgmIndex + 1) % bgmPlaylist.length;
-        bgmAudio.src = bgmPlaylist[currentBgmIndex];
-        if(isBgmPlaying) bgmAudio.play().catch(e => console.log("BGM Error:", e));
-    });
-    function toggleBGM() {
-        if(isBgmPlaying) { bgmAudio.pause(); isBgmPlaying = false; document.getElementById('bgm-toggle').innerText = "🔇 BGM OFF"; } 
-        else { bgmAudio.play().catch(e => console.log(e)); isBgmPlaying = true; document.getElementById('bgm-toggle').innerText = "🔊 BGM ON"; }
-    }
+    bgmAudio.loop = false; let isBgmPlaying = false;
+    bgmAudio.addEventListener('ended', () => { currentBgmIndex = (currentBgmIndex + 1) % bgmPlaylist.length; bgmAudio.src = bgmPlaylist[currentBgmIndex]; if(isBgmPlaying) bgmAudio.play().catch(e=>console.log(e)); });
+    function toggleBGM() { if(isBgmPlaying) { bgmAudio.pause(); isBgmPlaying = false; document.getElementById('bgm-toggle').innerText = "🔇 BGM OFF"; } else { bgmAudio.play().catch(e=>console.log(e)); isBgmPlaying = true; document.getElementById('bgm-toggle').innerText = "🔊 BGM ON"; } }
     function autoStartBGM() { if(!isBgmPlaying) toggleBGM(); }
 
     // ==========================================
-    // 파이어베이스 및 로컬 동기화 시스템
+    // 시스템 변수 및 동기화 설정
     // ==========================================
     let useFirebase = false; let db = null;
-    const firebaseConfig = {
+        const firebaseConfig = {
       apiKey: "AIzaSyDX5TiB78wqtnzgwgOpfnEv7f0hcN0L4LU",
       authDomain: "duru20401-b60fa.firebaseapp.com",
       projectId: "duru20401-b60fa",
@@ -287,17 +272,14 @@
     };
 
     if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("API_KEY_입력")) {
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore(); useFirebase = true;
+      firebase.initializeApp(firebaseConfig); db = firebase.firestore(); useFirebase = true;
       let netStatus = document.getElementById('network-status');
-      netStatus.className = "inline-block mt-1 text-xs px-2 py-0.5 bg-emerald-900 text-emerald-300 rounded font-bold shadow";
-      netStatus.innerText = "온라인 (실시간 DB 연동)";
+      netStatus.className = "inline-block mt-1 text-xs px-2 py-0.5 bg-emerald-900 text-emerald-300 rounded font-bold shadow"; netStatus.innerText = "온라인 (실시간 DB 연동)";
     }
 
-    let gameState = { round: 0, stage: 'LOBBY', secretPassword: "", hintsData: [], players: {}, finalWinners: [] };
-    let myPlayer = { name: "", role: "", isAI: false, detectiveHints: 3, historyHints: [], historyGuesses: [] };
+    let gameState = { round: 0, stage: 'LOBBY', secretPassword: "", hintsData: [], players: {}, finalWinners: [], saboteurNextRound: false, pastWinnerLogs: [] };
+    let myPlayer = { name: "", role: "", isAI: false, detectiveHints: 3, historyHints: [], historyGuesses: [], usedSaboteur: false, usedGambler: false, usedDrStrange: false, prophetTarget: "", gamblerTarget: "" };
     let usedDetectiveHintThisRound = false;
-    
     let isAdmin = false; let timerInterval = null;
 
     function openRules() { document.getElementById('rules-modal').classList.remove('hidden'); }
@@ -305,8 +287,7 @@
     
     function openHistory() {
       document.getElementById('history-modal').classList.remove('hidden');
-      const hintsList = document.getElementById('history-hints-list');
-      const guessList = document.getElementById('history-guesses-list');
+      const hintsList = document.getElementById('history-hints-list'); const guessList = document.getElementById('history-guesses-list');
       hintsList.innerHTML = myPlayer.historyHints.length > 0 ? myPlayer.historyHints.map(h => `<li class="mb-1">${h}</li>`).join('') : `<li class="text-slate-500 list-none">아직 획득한 힌트가 없습니다.</li>`;
       guessList.innerHTML = myPlayer.historyGuesses.length > 0 ? myPlayer.historyGuesses.map(g => `<li class="mb-1">${g}</li>`).join('') : `<li class="text-slate-500">아직 제출한 추리 기록이 없습니다.</li>`;
     }
@@ -316,13 +297,9 @@
       const pw = document.getElementById('login-admin-pw').value;
       if (pw !== "2525" && !isAdmin) return alert("관리자 비밀번호를 먼저 입력하세요.");
       if (!confirm("⚠️ 정말 모든 데이터를 삭제하시겠습니까?\n현재 접속 중인 참가자도 모두 강제 퇴장됩니다.")) return;
-      
-      let emptyState = { stage: 'LOBBY', round: 0, players: {}, secretPassword: "", hintsData: [], finalWinners: [] };
-      if (useFirebase) db.collection("race_rooms").doc("room1").set(emptyState);
-      else localStorage.setItem("race_gameState", JSON.stringify(emptyState));
-      
-      alert("시스템이 초기화되었습니다.");
-      if(isAdmin) resetToLobbyLocal();
+      let emptyState = { stage: 'LOBBY', round: 0, players: {}, secretPassword: "", hintsData: [], finalWinners: [], saboteurNextRound: false, pastWinnerLogs: [] };
+      if (useFirebase) db.collection("race_rooms").doc("room1").set(emptyState); else localStorage.setItem("race_gameState", JSON.stringify(emptyState));
+      alert("시스템이 초기화되었습니다."); if(isAdmin) resetToLobbyLocal();
     }
 
     function syncPlayerState() {
@@ -331,13 +308,8 @@
     }
 
     function syncGameStateFromAdmin() {
-      if (useFirebase) {
-        db.collection("race_rooms").doc("room1").set({ stage: gameState.stage, round: gameState.round, secretPassword: gameState.secretPassword, hintsData: gameState.hintsData, finalWinners: gameState.finalWinners || [] }, { merge: true });
-      } else {
-        let saved = JSON.parse(localStorage.getItem("race_gameState") || "{}");
-        saved.stage = gameState.stage; saved.round = gameState.round; saved.secretPassword = gameState.secretPassword; saved.hintsData = gameState.hintsData; saved.finalWinners = gameState.finalWinners || [];
-        localStorage.setItem("race_gameState", JSON.stringify(saved));
-      }
+      if (useFirebase) db.collection("race_rooms").doc("room1").set(gameState, { merge: true });
+      else localStorage.setItem("race_gameState", JSON.stringify(gameState));
     }
 
     function initSyncListener() {
@@ -349,19 +321,14 @@
     function handleSyncData(data) {
       if (!data) return;
       let oldStage = gameState.stage; let oldRound = gameState.round;
+      
+      gameState = { ...gameState, ...data };
       gameState.players = data.players || {};
-      if (data.secretPassword) gameState.secretPassword = data.secretPassword;
-      if (data.hintsData) gameState.hintsData = data.hintsData;
-      if (data.finalWinners) gameState.finalWinners = data.finalWinners;
 
-      if (isAdmin) updateAdminPlayerList();
-      else if (myPlayer.name !== "" && !gameState.players[myPlayer.name]) {
-            alert("⚠️ 관리자에 의해 게임이 초기화되었거나 강제 퇴장되었습니다.");
-            resetToLobbyLocal(); return;
-      }
+      if (isAdmin) renderAdminDynamicView();
+      else if (myPlayer.name !== "" && !gameState.players[myPlayer.name]) { alert("⚠️ 게임이 초기화되었거나 퇴장되었습니다."); resetToLobbyLocal(); return; }
 
       if (data.stage && data.round !== undefined) {
-        gameState.stage = data.stage; gameState.round = data.round;
         if (!isAdmin && (oldStage !== data.stage || oldRound !== data.round)) {
            if (data.stage === 'LOBBY') resetToLobbyLocal();
            else triggerStageClient(data.stage);
@@ -370,17 +337,38 @@
     }
     initSyncListener();
 
-    const ROLE_DETAILS = [
-      { name: "예언가", icon: "🔮", desc: "우승자 예측 성공 시 추가 추리 기회 획득" },
-      { name: "탐정", icon: "🕵️", desc: "게임 중 단 3번, 남들보다 힌트를 더 확인. (라운드당 1회)" },
-      { name: "정보원", icon: "😎", desc: "1라운드 시작 시 비밀번호에 없는 숫자 2개 획득" },
-      { name: "닥터 스트레인지", icon: "🌀", desc: "이전 우승자의 제출 기록 1회 열람" },
-      { name: "훼방꾼", icon: "💥", desc: "우승자의 기회를 단 1번 강탈 (본인 3회 추리)" },
-      { name: "시간도둑", icon: "⏱️", desc: "매 라운드 다른 사람보다 5초 먼저 문제풀이 시작" },
-      { name: "통계학자", icon: "📊", desc: "누적된 제출 결과 중 A/B 통계 상시 확인" },
-      { name: "성직자", icon: "🛡️", desc: "훼방꾼 방어 및 닥터 스트레인지 지목 면역" },
-      { name: "도박사", icon: "🎲", desc: "단 1회 배팅, 우승 시 정답 숫자 1개 위치 없이 획득" }
-    ];
+    // ==========================================
+    // 수학 수식 생성 및 힌트 로직
+    // ==========================================
+    function formatEq(a, b) {
+      let aStr = a === 1 ? 'x' : (a === -1 ? '-x' : a + 'x');
+      let bStr = b > 0 ? '+' + b : (b < 0 ? b : '');
+      return aStr + bStr;
+    }
+
+    function generateMathProblems() {
+      const problems = [];
+      const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+      const randNonZero = (min, max) => { let n = 0; while(n === 0) n = randInt(min, max); return n; };
+
+      for(let i=1; i<=3; i++) {
+        let a = randNonZero(-5, 5), b = randInt(-10, 10), x = randInt(-5, 5);
+        let correctY = a * x + b, isTrue = Math.random() > 0.5;
+        let displayY = isTrue ? correctY : correctY + randNonZero(-3, 3);
+        problems.push({ num: i, type: 'ox', text: `일차함수 f(x) = ${formatEq(a,b)} 에서 f(${x}) = ${displayY} 이다.`, answer: isTrue ? "1" : "2" });
+      }
+      for(let i=4; i<=6; i++) {
+        let a = randNonZero(-4, 4), b = randInt(-10, 10), x = randInt(-6, 6), y = a * x + b;
+        if (Math.random() > 0.5) problems.push({ num: i, type: 'calc', text: `일차함수 y = ${formatEq(a,b)} 그래프가 (${x}, p)를 지날 때, p의 값은?`, answer: y.toString() });
+        else problems.push({ num: i, type: 'calc', text: `일차함수 y = ${formatEq(a,b)} 그래프가 (k, ${y})를 지날 때, k의 값은?`, answer: x.toString() });
+      }
+      for(let i=7; i<=9; i++) {
+        let a = randNonZero(-5, 5), b = randNonZero(-5, 5), notPassing;
+        if(a > 0 && b > 0) notPassing = 4; else if(a > 0 && b < 0) notPassing = 2; else if(a < 0 && b > 0) notPassing = 3; else if(a < 0 && b < 0) notPassing = 1;
+        problems.push({ num: i, type: 'calc', text: `일차함수 y = ${formatEq(a,b)} 그래프가 지나지 않는 사분면은?`, answer: notPassing.toString() });
+      }
+      return problems;
+    }
 
     function generateLogicalHints(secretStr) {
       const digits = secretStr.split('').map(Number);
@@ -390,13 +378,10 @@
       let notInPassword = [0,1,2,3,4,5,6,7,8,9].find(n => !digits.includes(n));
 
       let hints = [
-        `네 자리 숫자 중 짝수는 ${evens}개, 홀수는 ${4-evens}개 입니다.`,
-        `네 자리 숫자의 모든 합은 ${sum} 입니다.`,
-        `네 자리 숫자 중 가장 큰 수는 ${max} 입니다.`,
-        `네 자리 숫자 중 가장 작은 수는 ${min} 입니다.`,
+        `네 자리 숫자 중 짝수는 ${evens}개, 홀수는 ${4-evens}개 입니다.`, `네 자리 숫자의 모든 합은 ${sum} 입니다.`,
+        `네 자리 숫자 중 가장 큰 수는 ${max} 입니다.`, `네 자리 숫자 중 가장 작은 수는 ${min} 입니다.`,
         `첫 번째 자리 숫자와 네 번째 자리 숫자의 합은 ${digits[0] + digits[3]} 입니다.`,
-        `소수(2, 3, 5, 7)는 총 ${primes}개 포함되어 있습니다.`,
-        `가장 큰 수와 가장 작은 수의 차이는 ${max - min} 입니다.`,
+        `소수(2, 3, 5, 7)는 총 ${primes}개 포함되어 있습니다.`, `가장 큰 수와 가장 작은 수의 차이는 ${max - min} 입니다.`,
         `두 번째 자리 숫자와 세 번째 자리 숫자의 합은 ${digits[1] + digits[2]} 입니다.`,
         `숫자 ${notInPassword} 은(는) 비밀번호에 절대 포함되지 않습니다.`,
         `네 자리 숫자의 총합은 ${sum % 3 === 0 ? "3의 배수입니다" : "3의 배수가 아닙니다"}.`,
@@ -409,34 +394,47 @@
       return hints.sort(() => Math.random() - 0.5);
     }
 
+    const ROLE_DETAILS = [
+      { name: "예언가", icon: "🔮", desc: "우승자 예측 성공 시 추가 추리 기회 획득" },
+      { name: "탐정", icon: "🕵️", desc: "게임 중 단 3번, 남들보다 힌트를 더 확인. (라운드당 1회)" },
+      { name: "정보원", icon: "😎", desc: "1라운드 시작 시 비밀번호에 없는 숫자 2개 획득" },
+      { name: "닥터 스트레인지", icon: "🌀", desc: "이전 우승자의 제출 기록 1회 열람" },
+      { name: "훼방꾼", icon: "💥", desc: "우승자의 기회를 단 1번 강탈 (본인 3회 추리)" },
+      { name: "시간도둑", icon: "⏱️", desc: "매 라운드 다른 사람보다 5초 먼저 문제풀이 시작" },
+      { name: "통계학자", icon: "📊", desc: "누적된 제출 결과 중 A/B 통계 상시 확인" },
+      { name: "성직자", icon: "🛡️", desc: "훼방꾼 방어 및 닥터 스트레인지 지목 면역" },
+      { name: "도박사", icon: "🎲", desc: "단 1회 배팅, 우승 시 정답 숫자 1개 획득" }
+    ];
+
+    // ==========================================
+    // 접속 및 역할
+    // ==========================================
     function loginAdmin() {
-      const pw = document.getElementById('login-admin-pw').value;
-      if (pw === "2525") {
+      if (document.getElementById('login-admin-pw').value === "2525") {
         isAdmin = true;
-        document.getElementById('screen-login').classList.add('hidden');
-        document.getElementById('screen-admin').classList.remove('hidden');
+        document.getElementById('screen-login').classList.add('hidden'); document.getElementById('screen-admin').classList.remove('hidden');
         
-        let digits = ['0','1','2','3','4','5','6','7','8','9'];
-        digits.sort(() => Math.random() - 0.5); if(digits[0] === '0') { [digits[0], digits[1]] = [digits[1], digits[0]]; }
+        let digits = ['0','1','2','3','4','5','6','7','8','9'].sort(() => Math.random() - 0.5);
+        if(digits[0] === '0') [digits[0], digits[1]] = [digits[1], digits[0]];
         gameState.secretPassword = digits.slice(0, 4).join('');
         gameState.hintsData = generateLogicalHints(gameState.secretPassword);
         
         document.getElementById('bgm-toggle').classList.remove('hidden');
         syncGameStateFromAdmin(); autoStartBGM();
-      } else { alert("비밀번호가 틀렸습니다."); }
+      } else alert("비밀번호가 틀렸습니다.");
     }
 
     function joinGame() {
       const name = document.getElementById('login-name').value.trim();
       if (!name) return alert("이름을 입력하세요.");
-      myPlayer.name = name; myPlayer.isAI = false; myPlayer.role = "직업 선택 중..."; 
+      myPlayer.name = name; myPlayer.role = "직업 선택 중..."; 
       myPlayer.detectiveHints = 3; myPlayer.historyHints = []; myPlayer.historyGuesses = [];
+      myPlayer.usedSaboteur = false; myPlayer.usedGambler = false; myPlayer.usedDrStrange = false;
       
-      gameState.players[myPlayer.name] = { role: myPlayer.role, score: 0, isAI: false, deductionAttempts: 1, submitTime: Infinity, isWinner: false };
+      gameState.players[myPlayer.name] = { role: myPlayer.role, score: 0, isAI: false, deductionAttempts: 0, submitTime: Infinity, isWinner: false, hasSubmittedProblem: false, deductionSubmittedCount: 0, maxDeductions: 0 };
       syncPlayerState(); 
 
-      document.getElementById('screen-login').classList.add('hidden');
-      document.getElementById('screen-lobby').classList.remove('hidden');
+      document.getElementById('screen-login').classList.add('hidden'); document.getElementById('screen-lobby').classList.remove('hidden');
       renderRoles(); 
     }
 
@@ -456,107 +454,89 @@
       document.getElementById('my-name').innerText = myPlayer.name; document.getElementById('my-role').innerText = myPlayer.role;
       document.getElementById('user-info').classList.remove('hidden');
       document.getElementById('roles-grid').innerHTML = `<div class="col-span-1 md:col-span-3 text-center p-8 bg-slate-900 border border-emerald-500 rounded-xl shadow-lg"><div class="text-3xl text-emerald-400 font-bold mb-2">✅ [${roleName}] 선택 완료!</div><p class="text-slate-300 mt-2">곧 게임이 시작됩니다.</p></div>`;
-      gameState.players[myPlayer.name] = { role: roleName, score: 0, isAI: false, deductionAttempts: 1, submitTime: Infinity, isWinner: false };
-      syncPlayerState(); 
+      gameState.players[myPlayer.name].role = roleName; syncPlayerState(); 
     }
 
     function fillWithAI() {
       if(!isAdmin) return;
-      const botNames = ["봇 알파", "봇 베타", "봇 감마", "봇 델타", "봇 엡실론", "봇 제타", "봇 에타", "봇 세타"];
       let needed = 9 - Object.keys(gameState.players).length;
       if (needed <= 0) return alert("이미 9명이 꽉 찼습니다.");
       for(let i=0; i<needed; i++) {
         let role = ROLE_DETAILS[Object.keys(gameState.players).length + i]?.name || "시민";
-        gameState.players[botNames[i]] = { role: role, score: 0, isAI: true, deductionAttempts: 1, submitTime: Infinity, isWinner: false };
+        gameState.players[`봇_${i+1}`] = { role: role, score: 0, isAI: true, submitTime: Infinity, isWinner: false, hasSubmittedProblem: false, deductionSubmittedCount: 0, maxDeductions: 0 };
       }
-      alert(`${needed}명의 AI가 추가되었습니다.`);
-      if (useFirebase) db.collection("race_rooms").doc("room1").set({ players: gameState.players }, { merge: true });
-      else { let saved = JSON.parse(localStorage.getItem("race_gameState") || "{}"); saved.players = gameState.players; localStorage.setItem("race_gameState", JSON.stringify(saved)); }
-      updateAdminPlayerList();
+      syncGameStateFromAdmin();
     }
 
-    function updateAdminPlayerList() {
-      const list = document.getElementById('admin-player-list'); list.innerHTML = '';
-      Object.keys(gameState.players).forEach(pName => {
-        let p = gameState.players[pName];
-        let isBot = p.isAI ? " <span class='text-xs bg-slate-700 px-1 rounded'>(AI)</span>" : "";
-        let roleIcon = ROLE_DETAILS.find(r => r.name === p.role)?.icon || "👤";
-        list.innerHTML += `<li class="bg-slate-800 p-2 rounded mb-1 flex items-center justify-between"><div><span class="mr-2 text-lg">${roleIcon}</span> <span>${pName} ${isBot} <span class="text-emerald-400 text-xs ml-2">[${p.role}]</span></span></div></li>`;
-      });
-    }
-
-    function generateMathProblems() {
-      const problems = [];
-      const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-      const randNonZero = (min, max) => { let n = 0; while(n === 0) n = randInt(min, max); return n; };
-
-      for(let i=1; i<=3; i++) {
-        let a = randNonZero(-5, 5), b = randInt(-10, 10), x = randInt(-5, 5);
-        let correctY = a * x + b, isTrue = Math.random() > 0.5;
-        let displayY = isTrue ? correctY : correctY + randNonZero(-3, 3);
-        problems.push({ num: i, type: 'ox', text: `일차함수 f(x) = ${a}x ${b>=0?'+'+b:b} 에서 f(${x}) = ${displayY} 이다.`, answer: isTrue ? "1" : "2" });
+    // ==========================================
+    // 관리자 대시보드 (수정된 핵심 뷰)
+    // ==========================================
+    function renderAdminDynamicView() {
+      if (!isAdmin) return;
+      const container = document.getElementById('admin-dynamic-view');
+      let html = `<h3 class="font-bold text-sky-300 mb-2">현재 접속자 현황 (${Object.keys(gameState.players).length}명)</h3><ul class="text-sm space-y-2 text-slate-300 font-medium">`;
+      
+      if (gameState.stage === 'LOBBY' || gameState.stage === 'PREP') {
+          Object.keys(gameState.players).forEach(pName => {
+              let p = gameState.players[pName];
+              let icon = ROLE_DETAILS.find(r => r.name === p.role)?.icon || "👤";
+              html += `<li class="bg-slate-800 p-2 rounded flex justify-between items-center"><div><span class="mr-2">${icon}</span>${pName} <span class="text-emerald-400 text-xs ml-1">[${p.role}]</span></div></li>`;
+          });
+      } 
+      else if (gameState.stage === 'PROBLEM') {
+          Object.keys(gameState.players).forEach(pName => {
+              let p = gameState.players[pName];
+              let status = p.hasSubmittedProblem ? "<span class='text-emerald-400'>✅ 제출완료</span>" : "<span class='text-amber-400'>⏳ 푸는 중</span>";
+              html += `<li class="bg-slate-800 p-2 rounded flex justify-between items-center"><span>${pName}</span> ${status}</li>`;
+          });
       }
-      for(let i=4; i<=6; i++) {
-        let a = randNonZero(-4, 4), b = randInt(-10, 10), x = randInt(-6, 6), y = a * x + b;
-        if (Math.random() > 0.5) problems.push({ num: i, type: 'calc', text: `일차함수 y = ${a}x ${b>=0?'+'+b:b} 그래프가 (${x}, p)를 지날 때, p의 값은?`, answer: y.toString() });
-        else problems.push({ num: i, type: 'calc', text: `일차함수 y = ${a}x ${b>=0?'+'+b:b} 그래프가 (k, ${y})를 지날 때, k의 값은?`, answer: x.toString() });
+      else if (gameState.stage === 'PROBLEM_RESULT') {
+          let winnerName = calculateWinner();
+          html = `<div class="bg-slate-800 p-4 rounded-xl border border-rose-500 mb-4 text-center shadow-lg"><h4 class="text-rose-400 text-sm font-bold mb-1">👑 ${gameState.round}라운드 우승자</h4><div class="text-3xl font-black text-white">${winnerName}</div></div>`;
+          html += `<ul class="text-sm space-y-2 text-slate-300 font-medium">`;
+          
+          let sortedPlayers = Object.keys(gameState.players).sort((a,b) => (gameState.players[b].score || 0) - (gameState.players[a].score || 0));
+          sortedPlayers.forEach(pName => {
+              let p = gameState.players[pName];
+              if(p.isAI) return;
+              html += `<li class="bg-slate-800 p-2 rounded flex justify-between items-center"><span>${pName}</span> <span class="text-yellow-300 font-bold">${p.score || 0} / 9 정답</span></li>`;
+          });
       }
-      for(let i=7; i<=9; i++) {
-        let a = randNonZero(-5, 5), b = randNonZero(-5, 5), notPassing;
-        if(a > 0 && b > 0) notPassing = 4; else if(a > 0 && b < 0) notPassing = 2; else if(a < 0 && b > 0) notPassing = 3; else if(a < 0 && b < 0) notPassing = 1;
-        problems.push({ num: i, type: 'calc', text: `일차함수 y = ${a}x ${b>=0?'+'+b:b} 그래프가 지나지 않는 사분면은?`, answer: notPassing.toString() });
+      else if (gameState.stage === 'DEDUCTION') {
+          Object.keys(gameState.players).forEach(pName => {
+              let p = gameState.players[pName];
+              if(p.isAI) return;
+              let max = p.maxDeductions || 1;
+              let current = p.deductionSubmittedCount || 0;
+              let statusText = current >= max ? `<span class='text-emerald-400'>완료 (${current}/${max})</span>` : `<span class='text-amber-400'>입력중 (${current}/${max})</span>`;
+              html += `<li class="bg-slate-800 p-2 rounded flex justify-between items-center"><span>${pName}</span> ${statusText}</li>`;
+          });
       }
-      return problems;
+      
+      html += `</ul>`;
+      if(gameState.stage === 'LOBBY' || gameState.stage === 'PREP') html += `<button onclick="fillWithAI()" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded text-sm transition">빈 자리 AI봇으로 채우기</button>`;
+      container.innerHTML = html;
     }
 
-    // [수정1] 바둑판 레이아웃
-    function renderProblems() {
-      const list = document.getElementById('problem-list'); list.innerHTML = '';
-      window.currentProblems = generateMathProblems();
-      window.currentProblems.forEach(p => {
-        let ph = p.type === 'ox' ? "1=O, 2=X" : "정답";
-        let inputHtml = `<input type="number" id="prob-${p.num}" class="w-full mt-2 p-2 rounded bg-slate-900 border border-slate-600 text-center font-bold text-lg focus:outline-none focus:border-sky-500 transition" placeholder="${ph}">`;
-        list.innerHTML += `<div class="bg-slate-700 p-4 rounded-lg shadow-sm flex flex-col justify-between"><div class="flex items-start mb-2"><span class="font-bold text-sky-300 mr-2 text-lg">${p.num}.</span><span class="text-sm leading-tight">${p.text}</span></div>${inputHtml}</div>`;
-      });
-    }
-
-    function startTimer(seconds, onComplete) {
-      clearInterval(timerInterval); gameState.timer = seconds; updateTimerUI();
-      timerInterval = setInterval(() => {
-        gameState.timer--; updateTimerUI();
-        if (gameState.timer <= 0) { clearInterval(timerInterval); if (onComplete) onComplete(); }
-      }, 1000);
-    }
-
-    function updateTimerUI() {
-      let m = Math.floor(gameState.timer / 60).toString().padStart(2, '0');
-      let s = (gameState.timer % 60).toString().padStart(2, '0');
-      document.getElementById('game-timer').innerText = `${m}:${s}`;
-    }
-
-    function hideAllStages() {
-      ['stage-problem', 'stage-problem-result', 'stage-deduction', 'stage-prep', 'stage-gameover', 'stage-final-winner'].forEach(id => document.getElementById(id).classList.add('hidden'));
-    }
-
+    // ==========================================
+    // 스테이지 제어 & 우승자 판별
+    // ==========================================
     function calculateWinner() {
-        let bestPlayer = null; let highestScore = -1; let earliestTime = Infinity;
+        let bestPlayer = null; let earliestTime = Infinity;
         for (let pName in gameState.players) {
             let p = gameState.players[pName]; if (p.isAI) continue; 
-            let score = p.score || 0; let time = p.submitTime || Infinity;
-            if (score > highestScore) { highestScore = score; earliestTime = time; bestPlayer = pName; } 
-            else if (score === highestScore && time < earliestTime) { earliestTime = time; bestPlayer = pName; }
+            if (p.score === 9 && p.submitTime < earliestTime) { // [수정] 무조건 9문제 정답이어야 우승 후보
+                earliestTime = p.submitTime; bestPlayer = pName; 
+            }
         }
-        if (highestScore === 0 && earliestTime === Infinity) return "없음";
         return bestPlayer || "없음";
     }
 
     function adminStartNextStage() {
       if (gameState.stage === 'DEDUCTION') {
           let winners = Object.keys(gameState.players).filter(p => gameState.players[p].isWinner);
-          if (winners.length > 0) {
-              gameState.stage = 'FINAL_WINNER';
-              gameState.finalWinners = winners;
-          } else {
+          if (winners.length > 0) { gameState.stage = 'FINAL_WINNER'; gameState.finalWinners = winners; } 
+          else {
               gameState.stage = 'PREP';
               document.getElementById('admin-round-info').innerText = `Round ${gameState.round} - 정비 (30초)`;
               document.getElementById('admin-next-btn').innerText = gameState.round >= 10 ? "최종 결과 보기" : "다음 라운드 시작";
@@ -567,85 +547,108 @@
       }
       else if (gameState.stage === 'LOBBY' || gameState.stage === 'PREP') {
         gameState.round++; gameState.stage = 'PROBLEM';
-        document.getElementById('admin-round-info').innerText = `Round ${gameState.round} - 문제풀이 (1분)`; document.getElementById('admin-next-btn').innerText = "문제풀이 조기 종료";
+        
+        // 새로운 라운드: 제출기록 초기화
+        for(let p in gameState.players) {
+            gameState.players[p].hasSubmittedProblem = false;
+            gameState.players[p].score = 0;
+            gameState.players[p].submitTime = Infinity;
+            gameState.players[p].deductionSubmittedCount = 0;
+        }
+
+        // 훼방꾼 적용
+        gameState.saboteurActiveThisRound = gameState.saboteurNextRound;
+        gameState.saboteurNextRound = false;
+
+        document.getElementById('admin-round-info').innerText = `Round ${gameState.round} - 문제풀이 (80초)`; document.getElementById('admin-next-btn').innerText = "문제풀이 조기 종료";
       } 
       else if (gameState.stage === 'PROBLEM' || gameState.stage === 'PROBLEM_RESULT') {
         gameState.stage = 'DEDUCTION';
         document.getElementById('admin-round-info').innerText = `Round ${gameState.round} - 추리 (2분)`; document.getElementById('admin-next-btn').innerText = "추리 조기 종료";
       }
 
-      syncGameStateFromAdmin();
-      triggerStageClient(gameState.stage);
+      syncGameStateFromAdmin(); triggerStageClient(gameState.stage);
     }
 
     function triggerStageClient(stage) {
       document.getElementById('screen-lobby').classList.add('hidden');
       document.getElementById('screen-game').classList.remove('hidden');
       document.getElementById('game-round-display').innerText = `Round ${gameState.round}`;
-      
-      if (!isAdmin && stage !== 'LOBBY' && stage !== 'PROBLEM' && stage !== 'PROBLEM_RESULT') {
-          document.getElementById('btn-history-top').classList.remove('hidden');
-      } else { document.getElementById('btn-history-top').classList.add('hidden'); }
+      if (!isAdmin && stage !== 'LOBBY' && stage !== 'PROBLEM' && stage !== 'PROBLEM_RESULT') document.getElementById('btn-history-top').classList.remove('hidden');
+      else document.getElementById('btn-history-top').classList.add('hidden');
       
       hideAllStages();
 
       if (stage === 'FINAL_WINNER') {
-        document.getElementById('game-stage-display').innerText = "레이스 종료!";
-        document.getElementById('stage-final-winner').classList.remove('hidden');
+        document.getElementById('game-stage-display').innerText = "레이스 종료!"; document.getElementById('stage-final-winner').classList.remove('hidden');
         document.getElementById('final-winner-names').innerText = (gameState.finalWinners || []).join(', ');
         document.getElementById('final-winner-password').innerText = gameState.secretPassword;
         if(isAdmin) document.getElementById('admin-next-btn').disabled = true;
       }
       else if (stage === 'GAMEOVER') {
-        document.getElementById('game-stage-display').innerText = "게임 종료";
-        document.getElementById('stage-gameover').classList.remove('hidden');
+        document.getElementById('game-stage-display').innerText = "게임 종료"; document.getElementById('stage-gameover').classList.remove('hidden');
         document.getElementById('final-password').innerText = gameState.secretPassword;
       }
       else if (stage === 'PROBLEM') {
-        document.getElementById('game-stage-display').innerText = "문제풀이 스테이지";
-        document.getElementById('stage-problem').classList.remove('hidden');
-        document.getElementById('btn-submit-problems').innerText = "정답 제출하기";
-        document.getElementById('btn-submit-problems').disabled = false;
+        document.getElementById('game-stage-display').innerText = "문제풀이 스테이지"; document.getElementById('stage-problem').classList.remove('hidden');
+        document.getElementById('btn-submit-problems').innerText = "정답 제출하기"; document.getElementById('btn-submit-problems').disabled = false;
         document.getElementById('btn-submit-problems').classList.replace('bg-slate-600', 'bg-sky-500');
 
         renderProblems();
-        if(gameState.players[myPlayer.name]) gameState.players[myPlayer.name].submitTime = Infinity;
-        
-        let cdOverlay = document.getElementById('problem-countdown');
-        let cdNum = document.getElementById('countdown-number');
-        let stageTotalTime = 65; 
+        let cdOverlay = document.getElementById('problem-countdown'); let cdNum = document.getElementById('countdown-number');
+        let stageTotalTime = 85; // [수정] 기본 80초, 시간도둑은 5초 이득이므로 85초에서 시작
         
         if (!isAdmin) {
             if (myPlayer.role === '시간도둑') {
                 cdOverlay.classList.add('hidden'); 
             } else {
-                cdOverlay.classList.remove('hidden');
-                let count = 5; cdNum.innerText = count;
+                cdOverlay.classList.remove('hidden'); let count = 5; cdNum.innerText = count;
                 let cInt = setInterval(() => {
-                    count--;
-                    if(count > 0) cdNum.innerText = count;
-                    else { clearInterval(cInt); cdOverlay.classList.add('hidden'); } 
+                    count--; if(count > 0) cdNum.innerText = count; else { clearInterval(cInt); cdOverlay.classList.add('hidden'); } 
                 }, 1000);
             }
         }
-        
         startTimer(stageTotalTime, () => { handleProblemEnd(); });
       } 
       else if (stage === 'DEDUCTION') {
-        document.getElementById('game-stage-display').innerText = "비밀번호 추리 스테이지";
-        document.getElementById('stage-deduction').classList.remove('hidden');
-        document.getElementById('deduction-results-area').classList.add('hidden');
-        document.getElementById('deduction-results-list').innerHTML = '';
+        document.getElementById('game-stage-display').innerText = "비밀번호 추리 스테이지"; document.getElementById('stage-deduction').classList.remove('hidden');
+        document.getElementById('deduction-results-area').classList.add('hidden'); document.getElementById('deduction-results-list').innerHTML = '';
         document.getElementById('informant-message').classList.add('hidden');
         
         usedDetectiveHintThisRound = false;
-
         let winnerName = calculateWinner();
-        let attempts = (myPlayer.name === winnerName) ? 2 : 1;
         
-        document.getElementById('btn-submit-deduction').disabled = false;
-        document.getElementById('btn-submit-deduction').innerText = "추리 제출";
-        document.getElementById('btn-submit-deduction').classList.replace('bg-slate-600', 'bg-fuchsia-600');
+        // 예언가, 도박사 결산 (우승자 판별됨)
+        if (myPlayer.role === '예언가' && myPlayer.prophetTarget !== "" && myPlayer.prophetTarget === winnerName) {
+             alert(`🔮 예언 성공! [${winnerName}] 님이 9문제를 모두 맞히고 1등을 차지했습니다! 추리 기회가 2번 주어집니다.`);
+        }
+        if (myPlayer.role === '도박사' && myPlayer.gamblerTarget !== "" && myPlayer.gamblerTarget === winnerName) {
+             let randomDigit = gameState.secretPassword[Math.floor(Math.random()*4)];
+             alert(`🎲 도박 성공! [${winnerName}] 님이 우승했습니다.\n정답에 포함된 숫자 하나는 [ ${randomDigit} ] 입니다.`);
+        }
+
+        // 추리 기회 계산 (훼방꾼 방어 성직자 룰 적용)
+        let attempts = 1;
+        if (myPlayer.name === winnerName) attempts = 2;
+        if (myPlayer.role === '예언가' && myPlayer.prophetTarget === winnerName && winnerName !== "없음") attempts = 2;
+        
+        if (gameState.saboteurActiveThisRound) {
+            if (myPlayer.name === winnerName) {
+               if (myPlayer.role === '성직자') { /* 성직자 우승시 훼방꾼 방어 (2회 유지) */ }
+               else attempts = 0; // 강탈당함
+            }
+            if (myPlayer.role === '훼방꾼') attempts = 3;
+        }
+
+        gameState.players[myPlayer.name].maxDeductions = attempts;
+        gameState.players[myPlayer.name].deductionSubmittedCount = 0;
+        syncPlayerState();
+
+        document.getElementById('btn-submit-deduction').disabled = (attempts === 0);
+        document.getElementById('btn-submit-deduction').innerText = (attempts === 0) ? "기회 강탈됨" : "추리 제출";
+        if(attempts === 0) document.getElementById('btn-submit-deduction').classList.replace('bg-fuchsia-600', 'bg-slate-600');
+        else document.getElementById('btn-submit-deduction').classList.replace('bg-slate-600', 'bg-fuchsia-600');
+        
         document.getElementById('deduction-attempts').innerText = attempts;
         
         let myScore = gameState.players[myPlayer.name]?.score || 0;
@@ -656,22 +659,24 @@
             hintsUl.innerHTML = `<li>${currentHint}</li>`;
             if (!myPlayer.historyHints.includes(currentHint)) myPlayer.historyHints.push(currentHint);
         } else {
-            hintsUl.innerHTML = `<li class="text-rose-400 font-bold">❌ 해독에 실패하여 공통 힌트를 획득하지 못했습니다.</li>`;
+            hintsUl.innerHTML = `<li class="text-rose-400 font-bold">❌ 해독(9문제 정답)에 실패하여 힌트를 얻지 못했습니다.</li>`;
         }
 
+        // 탐정, 닥스 버튼 관리
         if (myPlayer.role === '탐정') {
             document.getElementById('detective-area').classList.remove('hidden');
             document.getElementById('detective-count').innerText = myPlayer.detectiveHints;
-            
             let detBtn = document.getElementById('btn-detective-hint');
-            detBtn.disabled = (myPlayer.detectiveHints <= 0);
-            
-            if(myPlayer.detectiveHints <= 0) {
-               detBtn.innerText = "🕵️ 추가 힌트 모두 소진됨";
-            } else {
-               detBtn.innerText = `🕵️ 탐정 전용 추가 힌트 열람 (남은 횟수: ${myPlayer.detectiveHints})`;
-            }
+            if(myPlayer.detectiveHints <= 0) { detBtn.disabled = true; detBtn.innerText = "🕵️ 추가 힌트 모두 소진됨"; }
+            else { detBtn.disabled = false; detBtn.innerText = `🕵️ 탐정 전용 추가 힌트 열람 (남은 횟수: ${myPlayer.detectiveHints})`; }
         } else { document.getElementById('detective-area').classList.add('hidden'); }
+
+        if (myPlayer.role === '닥터 스트레인지') {
+            document.getElementById('strange-area').classList.remove('hidden');
+            let strBtn = document.getElementById('btn-strange-ability');
+            if (myPlayer.usedDrStrange) { strBtn.disabled = true; strBtn.innerText = "🌀 능력 사용 완료"; }
+            else { strBtn.disabled = false; strBtn.innerText = "🌀 이전 우승자 기록 1회 열람"; }
+        } else { document.getElementById('strange-area').classList.add('hidden'); }
 
         if (myPlayer.role === '정보원' && gameState.round === 1) {
           let available = ['0','1','2','3','4','5','6','7','8','9'].filter(n => !gameState.secretPassword.includes(n));
@@ -683,58 +688,60 @@
         startTimer(120, () => { if(isAdmin) adminStartNextStage(); }); 
       }
       else if (stage === 'PREP') {
-        document.getElementById('game-stage-display').innerText = "정비시간 스테이지";
-        document.getElementById('stage-prep').classList.remove('hidden');
-        setupPrepUI();
-        startTimer(30, () => { if(isAdmin) adminStartNextStage(); }); 
+        document.getElementById('game-stage-display').innerText = "정비시간 스테이지"; document.getElementById('stage-prep').classList.remove('hidden');
+        setupPrepUI(); startTimer(30, () => { if(isAdmin) adminStartNextStage(); }); 
       }
     }
 
     function submitProblems() {
       if (myPlayer.isAI) return;
-      let score = 0;
-      window.currentProblems.forEach(p => { if (document.getElementById(`prob-${p.num}`).value === p.answer) score++; });
+      let score = 0; window.currentProblems.forEach(p => { if (document.getElementById(`prob-${p.num}`).value === p.answer) score++; });
       document.getElementById('btn-submit-problems').innerText = "제출 완료! 대기 중...";
       document.getElementById('btn-submit-problems').disabled = true;
       document.getElementById('btn-submit-problems').classList.replace('bg-sky-500', 'bg-slate-600');
       
       gameState.players[myPlayer.name].score = score;
       gameState.players[myPlayer.name].submitTime = Date.now();
+      gameState.players[myPlayer.name].hasSubmittedProblem = true;
       syncPlayerState();
     }
 
     function handleProblemEnd() {
-      hideAllStages();
-      document.getElementById('stage-problem-result').classList.remove('hidden');
+      hideAllStages(); document.getElementById('stage-problem-result').classList.remove('hidden');
       if (gameState.players[myPlayer.name] && gameState.players[myPlayer.name].isAI) gameState.players[myPlayer.name].score = 0;
       document.getElementById('my-score').innerText = gameState.players[myPlayer.name]?.score || 0;
       document.getElementById('round-winner').innerText = calculateWinner();
     }
 
-    // [수정2] 탐정 힌트 팝업 알림창(alert) 추가
+    // [수정5] 탐정 힌트 DB 완벽 연동
     function useDetectiveHint() {
-        if (usedDetectiveHintThisRound) {
-            alert("이번 라운드에서는 이미 추가 힌트를 열람했습니다.");
-            return;
-        }
-
+        if (usedDetectiveHintThisRound) return alert("이번 라운드에서는 이미 추가 힌트를 열람했습니다.");
         if (myPlayer.detectiveHints > 0) {
             myPlayer.detectiveHints--;
             usedDetectiveHintThisRound = true;
-
             document.getElementById('detective-count').innerText = myPlayer.detectiveHints;
+            
             let extraHint = gameState.hintsData[10 + myPlayer.detectiveHints]; 
             document.getElementById('deduction-hints').innerHTML += `<li class="text-indigo-400 font-bold mt-2">🕵️ [탐정 전용] ${extraHint}</li>`;
-            
             if (!myPlayer.historyHints.includes(`[탐정] ${extraHint}`)) myPlayer.historyHints.push(`[탐정] ${extraHint}`);
             
             let detBtn = document.getElementById('btn-detective-hint');
-            detBtn.disabled = true;
-            detBtn.innerText = "🕵️ 이번 라운드 힌트 열람 완료";
-
-            // [수정2] 화면 중앙 팝업으로 힌트 강력 제시
-            alert(`🕵️ [탐정 전용 추가 힌트]\n\n${extraHint}`);
+            detBtn.disabled = true; detBtn.innerText = "🕵️ 이번 라운드 힌트 열람 완료";
+            alert(`🕵️ [탐정 전용 힌트]\n\n${extraHint}`);
         }
+    }
+
+    // 닥터 스트레인지 능력
+    function useDrStrangeAbility() {
+        if (myPlayer.usedDrStrange) return;
+        if (!gameState.pastWinnerLogs || gameState.pastWinnerLogs.length === 0) return alert("아직 기록된 이전 우승자의 데이터가 없습니다.");
+        
+        myPlayer.usedDrStrange = true;
+        document.getElementById('btn-strange-ability').disabled = true;
+        document.getElementById('btn-strange-ability').innerText = "🌀 능력 사용 완료";
+        
+        let targetLog = gameState.pastWinnerLogs[gameState.pastWinnerLogs.length - 1]; // 직전 우승자
+        alert(`🌀 [아가모토의 눈 열람]\n이전 우승자(${targetLog.name})의 기록:\n${targetLog.log}`);
     }
 
     function submitDeduction() {
@@ -742,15 +749,10 @@
       if(input.length !== 4) return alert("4자리 숫자를 입력하세요.");
       
       const secret = gameState.secretPassword || "1234"; 
-      
-      if (input === secret) {
-          gameState.players[myPlayer.name].isWinner = true;
-          syncPlayerState();
-      }
+      if (input === secret) { gameState.players[myPlayer.name].isWinner = true; syncPlayerState(); }
       
       let resultArr = [], inputArr = input.split(''), secArr = secret.split('');
       let matchedIndices = new Set();
-
       for(let i=0; i<4; i++) { if(inputArr[i] === secArr[i]) { resultArr[i] = `${inputArr[i]}:A`; matchedIndices.add(i); } }
       for(let i=0; i<4; i++) {
         if(!resultArr[i]) {
@@ -759,51 +761,87 @@
           if(!foundB) resultArr[i] = `${inputArr[i]}:C`;
         }
       }
-
-      let resString = resultArr.join(', ');
-      let logString = `[Round ${gameState.round}] 입력: ${input} ➔ ${resString}`;
+      let resString = resultArr.join(', '); let logString = `[Round ${gameState.round}] 입력: ${input} ➔ ${resString}`;
       
       document.getElementById('deduction-results-list').innerHTML += `<li class="bg-slate-800 p-2 rounded">${logString}</li>`;
       document.getElementById('deduction-results-area').classList.remove('hidden');
       document.getElementById('deduction-input').value = "";
-      
       myPlayer.historyGuesses.push(logString);
       
+      // 우승자의 기록을 닥터 스트레인지를 위해 저장
+      if (myPlayer.name === calculateWinner()) {
+         if(!gameState.pastWinnerLogs) gameState.pastWinnerLogs = [];
+         gameState.pastWinnerLogs.push({ name: myPlayer.name, log: logString });
+         if(useFirebase && myPlayer.name === calculateWinner()) { // 본인이 직접 DB에 기록
+             db.collection("race_rooms").doc("room1").set({ pastWinnerLogs: gameState.pastWinnerLogs }, { merge: true });
+         }
+      }
+
+      gameState.players[myPlayer.name].deductionSubmittedCount++;
+      syncPlayerState();
+
       let attempts = parseInt(document.getElementById('deduction-attempts').innerText);
       if(attempts > 1) { document.getElementById('deduction-attempts').innerText = attempts - 1; } 
       else {
         document.getElementById('deduction-attempts').innerText = 0;
-        document.getElementById('btn-submit-deduction').disabled = true;
-        document.getElementById('btn-submit-deduction').innerText = "제출 완료";
+        document.getElementById('btn-submit-deduction').disabled = true; document.getElementById('btn-submit-deduction').innerText = "제출 완료";
         document.getElementById('btn-submit-deduction').classList.replace('bg-fuchsia-600', 'bg-slate-600');
       }
     }
 
+    // [수정4] 정비시간 UI 세팅 (일회성 능력 제어)
     function setupPrepUI() {
       const area = document.getElementById('prep-ability-area'); area.innerHTML = '';
-      if (myPlayer.role === '예언가') area.innerHTML = `<h4 class="text-lg font-bold text-sky-400 mb-2">예언가</h4><select class="p-2 rounded bg-slate-800 text-white"><option>참가자 선택</option></select><button class="ml-2 bg-sky-600 px-4 py-2 rounded">예언 확정</button>`;
-      else if (['훼방꾼', '도박사'].includes(myPlayer.role)) area.innerHTML = `<label class="flex items-center justify-center space-x-2"><input type="checkbox" class="w-6 h-6"><span class="text-lg">이번 라운드에 능력 사용</span></label>`;
-      else area.innerHTML = `<p class="text-slate-400 py-4">다음 전략을 구상하세요.</p>`;
+      
+      let playerOptions = Object.keys(gameState.players).filter(p=>!gameState.players[p].isAI && p !== myPlayer.name).map(p=>`<option value="${p}">${p}</option>`).join('');
+      
+      if (myPlayer.role === '예언가') {
+        area.innerHTML = `<h4 class="text-lg font-bold text-sky-400 mb-2">🔮 예언가</h4><p class="text-sm mb-3">다음 우승자 예측</p><div class="flex gap-2"><select id="target-prophet" class="p-2 rounded bg-slate-800 border text-white"><option value="">선택 안함</option>${playerOptions}</select><button onclick="applyProphet()" class="bg-sky-600 px-4 py-2 rounded font-bold shadow">예언</button></div>`;
+      } 
+      else if (myPlayer.role === '도박사') {
+        if (myPlayer.usedGambler) {
+            area.innerHTML = `<div class="text-slate-400">🎲 도박사 능력을 이미 사용했습니다.</div>`;
+        } else {
+            area.innerHTML = `<h4 class="text-lg font-bold text-sky-400 mb-2">🎲 도박사 (단 1회)</h4><p class="text-sm mb-3">특정인의 우승에 배팅</p><div class="flex gap-2"><select id="target-gambler" class="p-2 rounded bg-slate-800 border text-white"><option value="">선택 안함</option>${playerOptions}</select><button onclick="applyGambler()" class="bg-sky-600 px-4 py-2 rounded font-bold shadow">배팅 올인!</button></div>`;
+        }
+      }
+      else if (myPlayer.role === '훼방꾼') {
+        if (myPlayer.usedSaboteur) {
+            area.innerHTML = `<div class="text-slate-400">💥 훼방꾼 능력을 이미 사용했습니다.</div>`;
+        } else {
+            area.innerHTML = `<h4 class="text-lg font-bold text-rose-400 mb-2">💥 훼방꾼 (단 1회)</h4><label class="flex items-center space-x-2 mt-4 cursor-pointer p-4 bg-slate-800 rounded border border-rose-500"><input type="checkbox" id="check-saboteur" class="w-6 h-6"><span class="text-lg text-white">다음 라운드에 능력 즉시 발동</span></label><button onclick="applySaboteur()" class="mt-4 bg-rose-600 px-6 py-2 rounded font-bold shadow w-full">적용하기</button>`;
+        }
+      }
+      else { area.innerHTML = `<p class="text-slate-400 py-4">다음 전략을 구상하세요.</p>`; }
+    }
+
+    function applyProphet() {
+        let t = document.getElementById('target-prophet').value;
+        if(t) { myPlayer.prophetTarget = t; alert(`[${t}] 님을 다음 우승자로 예언했습니다!`); }
+    }
+    function applyGambler() {
+        let t = document.getElementById('target-gambler').value;
+        if(t) { myPlayer.gamblerTarget = t; myPlayer.usedGambler = true; alert(`[${t}] 님에게 도박을 걸었습니다!`); setupPrepUI(); }
+    }
+    function applySaboteur() {
+        let c = document.getElementById('check-saboteur').checked;
+        if(c) {
+            myPlayer.usedSaboteur = true;
+            if(useFirebase) db.collection("race_rooms").doc("room1").set({ saboteurNextRound: true }, { merge: true });
+            else { let s = JSON.parse(localStorage.getItem("race_gameState")||"{}"); s.saboteurNextRound = true; localStorage.setItem("race_gameState", JSON.stringify(s)); }
+            alert("💥 훼방꾼 능력이 예약되었습니다! 다음 우승자의 기회를 강탈합니다."); setupPrepUI();
+        }
     }
 
     function resetToLobbyLocal() {
       clearInterval(timerInterval);
-      myPlayer = { name: "", role: "", isAI: false, detectiveHints: 3, historyHints: [], historyGuesses: [] };
+      myPlayer = { name: "", role: "", isAI: false, detectiveHints: 3, historyHints: [], historyGuesses: [], usedSaboteur: false, usedGambler: false, usedDrStrange: false, prophetTarget: "", gamblerTarget: "" };
       isAdmin = false;
-      
-      if (isBgmPlaying) toggleBGM();
-      document.getElementById('bgm-toggle').classList.add('hidden');
-      
-      document.getElementById('screen-game').classList.add('hidden');
-      document.getElementById('stage-gameover').classList.add('hidden');
-      document.getElementById('stage-final-winner').classList.add('hidden');
-      document.getElementById('user-info').classList.add('hidden');
-      document.getElementById('screen-admin').classList.add('hidden');
-      document.getElementById('screen-lobby').classList.add('hidden');
-      document.getElementById('screen-login').classList.remove('hidden');
-      document.getElementById('btn-history-top').classList.add('hidden');
-      document.getElementById('login-name').value = '';
-      document.getElementById('login-admin-pw').value = '';
+      if (isBgmPlaying) toggleBGM(); document.getElementById('bgm-toggle').classList.add('hidden');
+      document.getElementById('screen-game').classList.add('hidden'); document.getElementById('stage-gameover').classList.add('hidden'); document.getElementById('stage-final-winner').classList.add('hidden');
+      document.getElementById('user-info').classList.add('hidden'); document.getElementById('screen-admin').classList.add('hidden'); document.getElementById('screen-lobby').classList.add('hidden');
+      document.getElementById('screen-login').classList.remove('hidden'); document.getElementById('btn-history-top').classList.add('hidden');
+      document.getElementById('login-name').value = ''; document.getElementById('login-admin-pw').value = '';
       if(document.getElementById('admin-next-btn')) document.getElementById('admin-next-btn').disabled = false;
       closeHistory(); closeRules();
     }
