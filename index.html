@@ -472,22 +472,44 @@
       });
     }
 
+// 1. 기존의 startTimer 함수를 아래 코드로 완전히 교체하세요.
     function startTimer(seconds, onComplete) {
-      clearInterval(timerInterval); gameState.timer = seconds; updateTimerUI();
+      clearInterval(timerInterval);
+      gameState.timer = seconds;
+      updateTimerUI(); // 시작하자마자 UI 즉시 갱신
+      
       timerInterval = setInterval(() => {
-        gameState.timer--; updateTimerUI();
-        if (gameState.timer <= 0) { clearInterval(timerInterval); if (onComplete) onComplete(); }
+        gameState.timer--;
+        updateTimerUI(); // 1초마다 참가자 및 관리자 시계 갱신
+        
+        // 관리자라면 주기적으로 서버(또는 로컬스토리지)에 남은 시간 전파
+        if (isAdmin && gameState.timer % 2 === 0) {
+          syncGameStateFromAdmin();
+        }
+        
+        if (gameState.timer <= 0) {
+          clearInterval(timerInterval);
+          if (onComplete) onComplete();
+        }
       }, 1000);
     }
 
+    // 2. 기존의 updateTimerUI 함수를 아래 코드로 완전히 교체하세요.
     function updateTimerUI() {
-      let m = Math.floor(gameState.timer / 60).toString().padStart(2, '0');
-      let s = (gameState.timer % 60).toString().padStart(2, '0');
-      document.getElementById('game-timer').innerText = `${m}:${s}`;
-      if(isAdmin) document.getElementById('admin-timer').innerText = `${m}:${s}`;
-    }
+      let currentTimerValue = gameState.timer ?? 0;
+      if (currentTimerValue < 0) currentTimerValue = 0;
 
-    function hideAllStages() {
+      let m = Math.floor(currentTimerValue / 60).toString().padStart(2, '0');
+      let s = (currentTimerValue % 60).toString().padStart(2, '0');
+      
+      // 참가자(학생) 화면 시계 반영
+      let gTimer = document.getElementById('game-timer');
+      if (gTimer) gTimer.innerText = `남은시간: ${m}:${s}`;
+      
+      // 관리자 화면 시계 반영
+      let aTimer = document.getElementById('admin-timer');
+      if (aTimer) aTimer.innerText = `남은시간: ${m}:${s}`;
+    }    function hideAllStages() {
       ['stage-problem', 'stage-problem-result', 'stage-deduction', 'stage-prep', 'stage-gameover', 'stage-final-winner'].forEach(id => document.getElementById(id).classList.add('hidden'));
     }
 
