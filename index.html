@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>비밀번호 찾기: 해커톤 게임</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>비밀번호 찾기: 방탈출 게임</title>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0d1117;
-            --panel-bg: rgba(22, 27, 34, 0.85);
-            --border-color: #30363d;
-            --text-color: #e6edf3;
-            --primary: #00ff9d;
-            --primary-glow: rgba(0, 255, 157, 0.3);
-            --danger: #ff3e3e;
-            --blur-bg: rgba(13, 17, 23, 0.95);
+            /* 화사한 파스텔 테마 색상 */
+            --bg-color: #FFF0F5; /* 라벤더 블러쉬 (연핑크 배경) */
+            --panel-bg: #FFFFFF; /* 패널 배경 화이트 */
+            --primary: #FF8E9E; /* 귀여운 핑크 포인트 */
+            --primary-hover: #FF7488;
+            --secondary: #87CEFA; /* 스카이 블루 */
+            --text-color: #555555; /* 부드러운 진회색 텍스트 */
+            --border-color: #FFE0E6;
+            --danger: #FFB6C1; /* 경고용 연핑크 */
+            --blur-bg: rgba(255, 240, 245, 0.9);
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'Nanum Gothic', sans-serif;
             margin: 0;
             padding: 0;
             display: flex;
@@ -28,75 +30,88 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            background-image: linear-gradient(var(--panel-bg) 1px, transparent 1px),
-                              linear-gradient(90deg, var(--panel-bg) 1px, transparent 1px);
+            /* 귀여운 땡땡이 배경 패턴 */
+            background-image: radial-gradient(var(--border-color) 2px, transparent 2px);
             background-size: 30px 30px;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Jua', sans-serif;
+            color: var(--primary);
+            text-align: center;
+            margin-top: 0;
+            letter-spacing: 1px;
         }
 
         .screen {
             display: none;
             width: 90%;
             max-width: 1000px;
-            height: 90vh;
+            height: 85vh;
             background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 30px;
             padding: 2rem;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            backdrop-filter: blur(10px);
+            box-shadow: 0 15px 30px rgba(255, 142, 158, 0.15);
             flex-direction: column;
             position: relative;
+            border: 3px solid #FFF;
         }
 
         .screen.active {
             display: flex;
         }
 
-        h1, h2, h3 {
-            color: var(--primary);
-            text-align: center;
-            text-shadow: 0 0 10px var(--primary-glow);
-            margin-top: 0;
-        }
-
         input[type="text"], input[type="number"], input[type="password"] {
-            background: #010409;
-            border: 1px solid var(--border-color);
-            color: var(--primary);
-            padding: 10px;
+            background: #FAFAFA;
+            border: 2px solid var(--border-color);
+            color: var(--text-color);
+            padding: 12px;
             font-family: inherit;
-            border-radius: 4px;
+            border-radius: 15px;
             outline: none;
             text-align: center;
-            font-size: 1.2rem;
-            margin: 5px 0;
+            font-size: 1.1rem;
+            margin: 8px 0;
+            transition: 0.3s;
         }
 
         input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 8px var(--primary-glow);
+            border-color: var(--secondary);
+            background: #FFF;
+            box-shadow: 0 0 10px rgba(135, 206, 250, 0.3);
         }
 
         button {
-            background: transparent;
-            border: 1px solid var(--primary);
-            color: var(--primary);
+            background: var(--primary);
+            border: none;
+            color: #FFF;
             padding: 12px 24px;
-            font-family: inherit;
-            font-size: 1.1rem;
+            font-family: 'Jua', sans-serif;
+            font-size: 1.3rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            border-radius: 4px;
+            border-radius: 20px;
             margin: 10px;
+            box-shadow: 0 4px 10px rgba(255, 142, 158, 0.4);
         }
 
         button:hover {
-            background: var(--primary);
-            color: var(--bg-color);
-            box-shadow: 0 0 15px var(--primary-glow);
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 142, 158, 0.5);
         }
 
-        /* 1스테이지 문제 바둑판 배열 */
+        /* 보조 버튼 스타일 */
+        .btn-outline {
+            background: #FFF;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        .btn-outline:hover {
+            background: var(--primary);
+            color: #FFF;
+        }
+
         .grid-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -106,98 +121,110 @@
         }
 
         .problem-box {
-            background: #010409;
-            border: 1px solid var(--border-color);
-            padding: 15px;
-            border-radius: 6px;
+            background: #FFF9FA;
+            border: 2px solid var(--border-color);
+            padding: 20px;
+            border-radius: 20px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.02);
         }
 
         .problem-box span {
-            font-size: 0.9rem;
+            font-weight: 700;
+            font-size: 1rem;
             margin-bottom: 10px;
+            word-break: keep-all;
         }
 
-        /* 직업 선택 바둑판 */
         .role-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            gap: 15px;
         }
 
         .role-card {
-            border: 1px solid var(--border-color);
-            padding: 15px;
+            background: #F0F8FF;
+            border: 2px solid #D6EAF8;
+            padding: 20px;
+            border-radius: 20px;
             text-align: center;
             cursor: pointer;
+            font-family: 'Jua', sans-serif;
+            font-size: 1.5rem;
+            color: #4A90E2;
             transition: 0.3s;
         }
         
         .role-card:hover {
-            border-color: var(--primary);
+            background: #4A90E2;
+            color: #FFF;
+            transform: scale(1.05);
         }
 
-        /* 공통 헤더 (타이머, 라운드 표시) */
         .header-info {
             display: flex;
             justify-content: space-between;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
+            border-bottom: 2px dashed var(--border-color);
+            padding-bottom: 15px;
             margin-bottom: 20px;
             font-size: 1.2rem;
-            color: var(--text-color);
+            font-weight: bold;
+            color: var(--primary);
         }
 
-        /* 블러 오버레이 (연승저지 / 카운트다운) */
         .overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: var(--blur-bg);
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(10px);
             display: none;
             justify-content: center;
             align-items: center;
             flex-direction: column;
             z-index: 100;
-            border-radius: 8px;
+            border-radius: 30px;
         }
 
         .overlay h1 {
-            font-size: 4rem;
-            color: var(--danger);
-            text-shadow: 0 0 20px rgba(255, 62, 62, 0.5);
+            font-size: 5rem;
+            color: var(--primary);
+            text-shadow: 2px 2px 0px #FFF;
         }
 
-        /* 2스테이지 추리 모듈 */
         .guess-module {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 15px;
             margin: 20px 0;
         }
         
         .guess-module input {
-            width: 50px;
-            height: 60px;
-            font-size: 2rem;
+            width: 60px;
+            height: 70px;
+            font-size: 2.5rem;
+            border-radius: 15px;
+            font-family: 'Jua', sans-serif;
+            color: var(--primary);
         }
 
-        #system-reset {
+        .reset-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 0.8rem;
-            padding: 5px 10px;
-            border-color: var(--danger);
-            color: var(--danger);
+            top: 20px;
+            right: 20px;
+            font-size: 0.9rem;
+            padding: 8px 15px;
+            background: #FFF;
+            border: 2px solid #DDD;
+            color: #999;
+            box-shadow: none;
         }
 
-        #system-reset:hover {
-            background: var(--danger);
-            color: var(--text-color);
-            box-shadow: 0 0 10px rgba(255, 62, 62, 0.5);
+        .reset-btn:hover {
+            background: #F5F5F5;
+            color: #555;
+            transform: none;
         }
 
     </style>
@@ -205,60 +232,60 @@
 <body>
 
     <div id="screen-login" class="screen active">
-        <h1>SYSTEM LOGIN</h1>
-        <div style="display: flex; gap: 20px; justify-content: center; margin-top: 50px;">
-            <div style="border: 1px solid var(--border-color); padding: 20px; text-align: center;">
-                <h3>Player Access</h3>
-                <input type="text" id="nickname" placeholder="팀 닉네임 입력"><br>
-                <button onclick="showRoleSelection()">참가하기</button>
+        <h1 style="font-size: 3rem; margin-top: 20px;">🌸 일차함수 비밀번호 찾기 🌸</h1>
+        <div style="display: flex; gap: 30px; justify-content: center; margin-top: 40px;">
+            <div style="background: #FFF9FA; border-radius: 20px; padding: 30px; text-align: center; flex: 1; box-shadow: 0 5px 15px rgba(255, 142, 158, 0.1);">
+                <h3>학생 참가하기</h3>
+                <input type="text" id="nickname" placeholder="팀 닉네임을 적어주세요!"><br>
+                <button id="btn-join">입장하기</button>
             </div>
-            <div style="border: 1px solid var(--border-color); padding: 20px; text-align: center;">
-                <h3>Admin Access</h3>
-                <input type="password" id="admin-pw" placeholder="관리자 비밀번호"><br>
-                <button onclick="adminLogin()">관리자 로그인</button>
+            <div style="background: #F0F8FF; border-radius: 20px; padding: 30px; text-align: center; flex: 1; box-shadow: 0 5px 15px rgba(135, 206, 250, 0.1);">
+                <h3 style="color: #4A90E2;">선생님 관리자</h3>
+                <input type="password" id="admin-pw" placeholder="비밀번호 입력"><br>
+                <button id="btn-admin-login" style="background: #4A90E2;">로그인</button>
             </div>
         </div>
-        <button id="system-reset" onclick="resetSystem()">SYSTEM INITIALIZE</button>
+        <button id="btn-reset-1" class="reset-btn">시스템 초기화</button>
     </div>
 
     <div id="screen-role" class="screen">
-        <h2>특수 능력 선택</h2>
+        <h2>✨ 우리 팀의 특수 능력을 골라보세요 ✨</h2>
         <div class="role-grid" id="role-grid">
             </div>
     </div>
 
     <div id="screen-admin" class="screen">
-        <h2>ADMIN CONTROL PANEL</h2>
-        <div id="admin-player-list" style="flex-grow: 1; border: 1px solid var(--border-color); padding: 10px; margin-bottom: 20px; overflow-y: auto;">
-            <p>데이터 대기중...</p>
+        <h2 style="color: #4A90E2;">선생님 컨트롤 패널</h2>
+        <div id="admin-player-list" style="flex-grow: 1; border: 2px solid #D6EAF8; background: #F0F8FF; border-radius: 20px; padding: 15px; margin-bottom: 20px; overflow-y: auto;">
+            <p style="color: #4A90E2; text-align: center;">학생들의 접속을 기다리고 있습니다...</p>
         </div>
-        <button onclick="startGame()" style="width: 100%; font-size: 1.5rem;">게임 시작 (1스테이지 전환)</button>
-        <button onclick="nextStage()" style="width: 100%; margin-top: 10px; border-color: var(--text-color); color: var(--text-color);">다음 스테이지 강제 전환</button>
-        <button id="system-reset" onclick="resetSystem()">SYSTEM INITIALIZE</button>
+        <button id="btn-start-game" style="background: #4A90E2; width: 100%; font-size: 1.5rem;">게임 시작 (1스테이지)</button>
+        <button id="btn-next-stage" class="btn-outline" style="width: 100%; margin-top: 10px; border-color: #4A90E2; color: #4A90E2;">다음 스테이지 강제 전환</button>
+        <button id="btn-reset-2" class="reset-btn">시스템 초기화</button>
     </div>
 
     <div id="screen-stage1" class="screen">
         <div class="overlay" id="stage1-overlay">
             <h1 id="countdown-text">5</h1>
-            <p id="overlay-subtext" style="font-size: 1.5rem; color: var(--danger);"></p>
+            <p id="overlay-subtext" style="font-size: 1.5rem; color: #FF7488; font-weight: bold;"></p>
         </div>
         <div class="header-info">
             <span id="s1-round-text">Round 1 - Stage 1</span>
-            <span style="color: var(--danger);">Time: <span id="s1-timer">90</span>s</span>
+            <span>남은 시간: <span id="s1-timer" style="color: #FF7488; font-size: 1.5rem;">90</span>초</span>
         </div>
         <div class="grid-container" id="problem-grid">
             </div>
-        <button onclick="submitStage1()" style="width: 100%; margin-top: 20px;">제출하기</button>
+        <button id="btn-submit-s1" style="width: 100%; margin-top: 20px;">문제 제출하기!</button>
     </div>
 
     <div id="screen-stage2" class="screen">
         <div class="header-info">
             <span id="s2-round-text">Round 1 - Stage 2</span>
-            <span style="color: var(--danger);">Time: <span id="s2-timer">120</span>s</span>
+            <span>추리 시간: <span id="s2-timer" style="color: #FF7488; font-size: 1.5rem;">120</span>초</span>
         </div>
         <div style="display: flex; gap: 20px; flex-grow: 1;">
-            <div style="flex: 2; border: 1px solid var(--border-color); padding: 20px; text-align: center;">
-                <h3>비밀번호 추리 (Bulls and Cows)</h3>
+            <div style="flex: 2; background: #FFF9FA; border-radius: 20px; border: 2px solid var(--border-color); padding: 20px; text-align: center;">
+                <h3>비밀번호를 맞춰보세요!</h3>
                 <div id="guess-container">
                     <div class="guess-module">
                         <input type="number" min="0" max="9" class="p1">
@@ -267,14 +294,13 @@
                         <input type="number" min="0" max="9" class="p4">
                     </div>
                 </div>
-                <button onclick="checkPassword()">판정하기</button>
-                <div id="guess-result" style="margin-top: 20px; font-size: 1.2rem; color: var(--primary);"></div>
-                <button id="final-submit-btn" style="display: none; width: 100%; background: var(--primary); color: var(--bg-color);" onclick="triggerVictory()">정답 제출 (4A 확인)</button>
+                <button id="btn-check-pw">판정 받아보기</button>
+                <div id="guess-result" style="margin-top: 20px; font-size: 1.3rem; color: var(--primary); font-weight: bold;"></div>
             </div>
-            <div style="flex: 1; border: 1px solid var(--border-color); padding: 20px;">
-                <h3>획득한 힌트</h3>
-                <ul id="hint-list" style="line-height: 1.8;">
-                    <li>힌트 데이터가 없습니다.</li>
+            <div style="flex: 1; background: #F0F8FF; border-radius: 20px; border: 2px solid #D6EAF8; padding: 20px;">
+                <h3 style="color: #4A90E2;">획득한 힌트</h3>
+                <ul id="hint-list" style="line-height: 2; color: #4A90E2; font-weight: bold;">
+                    <li>아직 힌트가 없어요.</li>
                 </ul>
             </div>
         </div>
@@ -282,27 +308,26 @@
 
     <div id="screen-stage3" class="screen">
         <div class="header-info">
-            <span id="s3-round-text">Round 1 - Stage 3 (정비)</span>
-            <span style="color: var(--danger);">Time: <span id="s3-timer">30</span>s</span>
+            <span id="s3-round-text">Round 1 - Stage 3 (쉬는 시간)</span>
+            <span>정비 시간: <span id="s3-timer" style="color: #FF7488; font-size: 1.5rem;">30</span>초</span>
         </div>
-        <div style="text-align: center; margin-top: 50px;">
-            <h3>직업 특수 능력</h3>
-            <button id="ability-btn" style="padding: 20px 40px; font-size: 1.5rem;" onclick="useAbility()">능력 발동</button>
-            <p id="ability-result" style="margin-top: 30px; font-size: 1.2rem;"></p>
+        <div style="text-align: center; margin-top: 80px;">
+            <h3 style="font-size: 2rem;">우리의 특수 능력을 쓸 시간이에요!</h3>
+            <button id="btn-ability" style="padding: 20px 50px; font-size: 1.8rem; margin-top: 20px;">특수 능력 발동하기 🪄</button>
+            <p id="ability-result" style="margin-top: 30px; font-size: 1.3rem; font-weight: bold;"></p>
         </div>
     </div>
 
-    <div id="screen-victory" class="screen" style="justify-content: center; align-items: center; background: rgba(0, 255, 157, 0.1); border-color: var(--primary);">
-        <h1 style="font-size: 3rem;">SYSTEM HACKED!</h1>
-        <h2 id="winner-name" style="font-size: 2rem; color: var(--text-color);"></h2>
-        <div style="font-size: 4rem; color: var(--primary); letter-spacing: 10px;" id="final-password"></div>
+    <div id="screen-victory" class="screen" style="justify-content: center; align-items: center; background: #FFF0F5; border: 5px solid #FF8E9E;">
+        <h1 style="font-size: 4rem; text-shadow: 2px 2px 10px rgba(255, 142, 158, 0.5);">🎉 탈출 성공! 🎉</h1>
+        <h2 id="winner-name" style="font-size: 2.5rem; color: #FF7488; margin-top: 10px;"></h2>
+        <div style="font-size: 5rem; font-family: 'Jua', sans-serif; color: #4A90E2; letter-spacing: 15px; margin-top: 30px;" id="final-password"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot, updateDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // Firebase 설정 (제공해주신 프로젝트)
         const firebaseConfig = {
             apiKey: "AIzaSyDX5TiB78wqtnzgwgOpfnEv7f0hcN0L4LU",
             authDomain: "duru20401-b60fa.firebaseapp.com",
@@ -316,35 +341,53 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 클라이언트 전역 변수
+        // 상태 변수
         let myTeamName = "";
         let myRole = "";
         let currentRound = 1;
         let lastWinner = "";
-        let secretPassword = [2, 5, 8, 0]; // 임시 비밀번호 설정 (실제 배포시 난수 생성 로직 적용 필요)
+        let secretPassword = [2, 5, 2, 5]; // 게임 비밀번호 예시
 
         const ROLES = ["탐정", "첩보원", "시간도둑", "예언가", "통계학자", "도박사", "수학자", "마법사", "마음을 읽는 자"];
 
-        // UI 전환 헬퍼 함수
-        window.switchScreen = (screenId) => {
+        // ----------------------------------------------------
+        // 유틸리티 함수
+        // ----------------------------------------------------
+        const switchScreen = (screenId) => {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
         };
 
-        // 관리자 로그인
-        window.adminLogin = () => {
-            if(document.getElementById('admin-pw').value === "2525") {
-                switchScreen('screen-admin');
-                listenAdminData();
-            } else {
-                alert("비밀번호가 틀렸습니다.");
+        const generateProblems = () => {
+            let html = "";
+            for(let i=1; i<=3; i++) {
+                let a = Math.floor(Math.random()*4)+1;
+                let b = Math.floor(Math.random()*6)-3;
+                let x = Math.floor(Math.random()*4)-2;
+                let y = a*x + b; // 정수해 보장
+                html += `<div class="problem-box"><span>${i}번. f(x)=${a}x${b>=0?'+':''}${b} 일 때, f(${x})=${y} 이다.</span><input type="text" placeholder="O 또는 X"></div>`;
             }
+            for(let i=4; i<=6; i++) {
+                let a = Math.floor(Math.random()*4)+1;
+                let x = Math.floor(Math.random()*5)-2;
+                let b = Math.floor(Math.random()*6)-3;
+                let y = a*x + b; // 정수해 보장
+                html += `<div class="problem-box"><span>${i}번. y=${a}x${b>=0?'+':''}${b} 의 그래프가 점 (${x}, y)를 지날 때, y값은?</span><input type="number" placeholder="정수 입력"></div>`;
+            }
+            for(let i=7; i<=9; i++) {
+                html += `<div class="problem-box"><span>${i}번. y=2x-4 의 그래프가 지나지 않는 사분면은 제 O 사분면이다.</span><input type="number" placeholder="숫자 1~4"></div>`;
+            }
+            document.getElementById('problem-grid').innerHTML = html;
         };
 
-        // 직업 선택 화면 렌더링
-        window.showRoleSelection = () => {
+        // ----------------------------------------------------
+        // 이벤트 리스너 바인딩 (문법 오류 및 스코프 문제 해결)
+        // ----------------------------------------------------
+
+        // [참가자 입장]
+        document.getElementById('btn-join').addEventListener('click', () => {
             myTeamName = document.getElementById('nickname').value;
-            if(!myTeamName) return alert("닉네임을 입력하세요");
+            if(!myTeamName) return alert("닉네임을 적어주세요!");
             
             const grid = document.getElementById('role-grid');
             grid.innerHTML = '';
@@ -352,72 +395,88 @@
                 let div = document.createElement('div');
                 div.className = 'role-card';
                 div.innerText = role;
-                div.onclick = () => selectRole(role);
+                div.addEventListener('click', async () => {
+                    myRole = role;
+                    await setDoc(doc(db, "players", myTeamName), { role: myRole, state: "대기중", score: 0 });
+                    alert(`${role} 직업을 골랐어요! 선생님이 시작할 때까지 기다려주세요.`);
+                    listenGameState();
+                });
                 grid.appendChild(div);
             });
             switchScreen('screen-role');
-        };
+        });
 
-        // 직업 선택 후 대기열 등록 (Firestore)
-        window.selectRole = async (role) => {
-            myRole = role;
-            await setDoc(doc(db, "players", myTeamName), { role: myRole, state: "대기중", score: 0 });
-            alert(`${role} 직업을 선택했습니다. 관리자의 시작을 대기합니다.`);
-            listenGameState();
-        };
+        // [관리자 로그인]
+        document.getElementById('btn-admin-login').addEventListener('click', () => {
+            if(document.getElementById('admin-pw').value === "2525") {
+                switchScreen('screen-admin');
+                onSnapshot(collection(db, "players"), (snapshot) => {
+                    let html = "";
+                    snapshot.forEach(doc => {
+                        let d = doc.data();
+                        html += `<p style="margin: 5px;"><strong>[${doc.id}]</strong> 직업: ${d.role} | 상태: ${d.state}</p>`;
+                    });
+                    document.getElementById('admin-player-list').innerHTML = html || "<p>아직 접속한 학생이 없습니다.</p>";
+                });
+            } else {
+                alert("비밀번호가 틀렸습니다.");
+            }
+        });
 
-        // 일차함수 정수해 문제 생성기
-        window.generateProblems = () => {
-            let html = "";
-            // 1~3: O/X
-            for(let i=1; i<=3; i++) {
-                let a = Math.floor(Math.random()*4)+1;
-                let b = Math.floor(Math.random()*6)-3;
-                let x = Math.floor(Math.random()*4)-2;
-                let y = a*x + b;
-                html += `
-                    <div class="problem-box">
-                        <span>${i}번. f(x)=${a}x${b>=0?'+':''}${b} 일 때, f(${x})=${y} 이다.</span>
-                        <input type="text" placeholder="O 또는 X">
-                    </div>
-                `;
-            }
-            // 4~6: 좌표 (정수 유지)
-            for(let i=4; i<=6; i++) {
-                let a = Math.floor(Math.random()*4)+1;
-                let x = Math.floor(Math.random()*5)-2;
-                let b = Math.floor(Math.random()*6)-3;
-                let y = a*x + b;
-                html += `
-                    <div class="problem-box">
-                        <span>${i}번. y=${a}x${b>=0?'+':''}${b} 의 그래프가 점 (${x}, y)를 지날 때, y값은?</span>
-                        <input type="number" placeholder="정수 입력">
-                    </div>
-                `;
-            }
-            // 7~9: 사분면
-            for(let i=7; i<=9; i++) {
-                html += `
-                    <div class="problem-box">
-                        <span>${i}번. y=2x-4 의 그래프가 지나지 않는 사분면은 제 O 사분면이다.</span>
-                        <input type="number" placeholder="숫자 1~4">
-                    </div>
-                `;
-            }
-            document.getElementById('problem-grid').innerHTML = html;
+        // [시스템 초기화]
+        const resetSystem = async () => {
+            const querySnapshot = await getDocs(collection(db, "players"));
+            querySnapshot.forEach((d) => deleteDoc(doc(db, "players", d.id)));
+            await setDoc(doc(db, "game", "state"), { stage: 0, round: 1, lastWinner: "" });
+            alert("시스템이 깨끗하게 초기화되었습니다!");
+            location.reload();
+        };
+        document.getElementById('btn-reset-1').addEventListener('click', resetSystem);
+        document.getElementById('btn-reset-2').addEventListener('click', resetSystem);
+
+        // [관리자 게임 컨트롤]
+        document.getElementById('btn-start-game').addEventListener('click', async () => {
+            await setDoc(doc(db, "game", "state"), { stage: 1, round: 1, lastWinner: "" });
+        });
+        document.getElementById('btn-next-stage').addEventListener('click', () => {
+            alert("다음 스테이지 전환 기능은 타이머 로직과 연동하여 서버에서 처리하는 것을 권장합니다.");
+        });
+
+        // [1스테이지 제출]
+        document.getElementById('btn-submit-s1').addEventListener('click', async () => {
+            await updateDoc(doc(db, "players", myTeamName), { state: "제출 완료" });
+            alert("답안 제출 완료! 친구들을 기다려주세요.");
+        });
+
+        // [2스테이지 추리]
+        document.getElementById('btn-check-pw').addEventListener('click', async () => {
+            let inputs = document.querySelectorAll('.guess-module input');
+            let guess = Array.from(inputs).map(inp => parseInt(inp.value));
             
-            // 수학자 능력: 5번 문제 비활성화
-            if(myRole === "수학자" && currentRound % 2 === 0) {
-                let inputs = document.querySelectorAll('#problem-grid input');
-                if(inputs[4]) {
-                    inputs[4].disabled = true;
-                    inputs[4].placeholder = "수학자 패스";
-                }
+            let aCount = 0;
+            for(let i=0; i<4; i++) {
+                if(guess[i] === secretPassword[i]) aCount++;
             }
-        };
+            
+            if(aCount === 4) {
+                // 4A 인 경우 즉시 승리 처리!
+                await updateDoc(doc(db, "game", "state"), { stage: "victory", winner: myTeamName });
+            } else {
+                document.getElementById('guess-result').innerText = `${aCount}A 판정입니다! 힌트를 참고해서 다시 맞춰보세요.`;
+            }
+        });
 
-        // Firestore 전역 게임 상태 리스너 (참가자용)
-        window.listenGameState = () => {
+        // [3스테이지 특수능력]
+        document.getElementById('btn-ability').addEventListener('click', () => {
+            document.getElementById('ability-result').innerText = `✨ ${myRole}의 특수 능력이 발동되었습니다! ✨`;
+            document.getElementById('btn-ability').disabled = true;
+            document.getElementById('btn-ability').style.background = "#CCC";
+        });
+
+        // ----------------------------------------------------
+        // 게임 상태 감지 (Firestore Listener)
+        // ----------------------------------------------------
+        const listenGameState = () => {
             onSnapshot(doc(db, "game", "state"), (docSnapshot) => {
                 if (docSnapshot.exists()) {
                     const data = docSnapshot.data();
@@ -432,29 +491,7 @@
             });
         };
 
-        // 관리자: 참가자 상태 모니터링
-        window.listenAdminData = () => {
-            onSnapshot(collection(db, "players"), (snapshot) => {
-                let html = "";
-                snapshot.forEach(doc => {
-                    let d = doc.data();
-                    html += `<p>[${doc.id}] 직업: ${d.role} | 상태: ${d.state}</p>`;
-                });
-                document.getElementById('admin-player-list').innerHTML = html;
-            });
-        };
-
-        // 관리자: 게임 컨트롤
-        window.startGame = async () => {
-            await setDoc(doc(db, "game", "state"), { stage: 1, round: 1, lastWinner: "" });
-        };
-        window.nextStage = async () => {
-            // 편의를 위한 스테이지 강제 전환 (1->2->3->1 순환)
-            // (실제 코드에서는 타이머 종료 시 자동 전환되도록 서버나 타이머 로직이 필요합니다.)
-        };
-
-        // 스테이지 1 시작 로직
-        window.startStage1 = async () => {
+        const startStage1 = async () => {
             switchScreen('screen-stage1');
             document.getElementById('s1-round-text').innerText = `Round ${currentRound} - Stage 1`;
             generateProblems();
@@ -466,101 +503,55 @@
             
             let isPenalty = (myTeamName === lastWinner);
             
-            // 시간도둑 & 연승저지 로직 적용
             if(myRole === "시간도둑" && !isPenalty) {
-                overlay.style.display = 'none'; // 시간도둑은 카운트다운 스킵
+                overlay.style.display = 'none'; 
             } else if(isPenalty) {
-                subText.innerText = "[연승저지 프로그램 가동 중]";
-                cdText.innerText = "10"; // 페널티로 10초 블러 (카운트 5초 + 페널티 5초)
+                subText.innerText = "앗! 연승 페널티로 화면이 잠깐 가려져요!";
+                cdText.innerText = "10";
             } else {
-                subText.innerText = "";
+                subText.innerText = "문제가 곧 공개됩니다!";
                 cdText.innerText = "5";
             }
 
-            // 프론트엔드 카운트다운 시뮬레이션
             let count = parseInt(cdText.innerText);
-            let timer = setInterval(() => {
+            let timer = setInterval(async () => {
                 count--;
                 cdText.innerText = count;
                 if(count <= 0) {
                     clearInterval(timer);
                     overlay.style.display = 'none';
-                    await updateDoc(doc(db, "players", myTeamName), { state: "문제 푸는 중" });
+                    if(myTeamName) await updateDoc(doc(db, "players", myTeamName), { state: "문제 푸는 중" });
                 }
             }, 1000);
         };
 
-        window.submitStage1 = async () => {
-            await updateDoc(doc(db, "players", myTeamName), { state: "제출 완료 대기중" });
-            alert("답안이 제출되었습니다.");
-            // 첫 만점자 판독 및 lastWinner 업데이트 로직은 서버(Cloud Functions) 또는 관리자 단에서 처리 권장
-        };
-
-        // 스테이지 2 시작 로직
-        window.startStage2 = async () => {
+        const startStage2 = async () => {
             switchScreen('screen-stage2');
-            await updateDoc(doc(db, "players", myTeamName), { state: "추리 중" });
-            // 우승자일 경우 추리 모듈 2개 생성 로직 추가 필요 (현재 UI는 1개 기준)
+            document.getElementById('guess-result').innerText = "";
+            if(myTeamName) await updateDoc(doc(db, "players", myTeamName), { state: "추리 중" });
         };
 
-        // 추리 4A 판정
-        window.checkPassword = () => {
-            let inputs = document.querySelectorAll('.guess-module input');
-            let guess = Array.from(inputs).map(inp => parseInt(inp.value));
-            
-            // B, C 판정 로직 단순화 예시
-            let aCount = 0;
-            for(let i=0; i<4; i++) {
-                if(guess[i] === secretPassword[i]) aCount++;
-            }
-            
-            if(aCount === 4) {
-                document.getElementById('final-submit-btn').style.display = 'block';
-                document.getElementById('guess-result').innerText = "4A! 정답 제출 버튼이 활성화되었습니다.";
-            } else {
-                document.getElementById('guess-result').innerText = `${aCount}A 판정되었습니다. 다시 추리하세요.`;
-            }
-        };
-
-        window.triggerVictory = async () => {
-            await updateDoc(doc(db, "game", "state"), { stage: "victory", winner: myTeamName });
-        };
-
-        // 스테이지 3 시작 로직
-        window.startStage3 = async () => {
+        const startStage3 = async () => {
             switchScreen('screen-stage3');
-            await updateDoc(doc(db, "players", myTeamName), { state: "정비중" });
+            if(myTeamName) await updateDoc(doc(db, "players", myTeamName), { state: "쉬는 시간" });
             
-            let btn = document.getElementById('ability-btn');
-            // 능력 보유자만 버튼 활성화
+            let btn = document.getElementById('btn-ability');
             if(["예언가", "통계학자", "도박사", "마음을 읽는 자"].includes(myRole)) {
                 btn.style.display = 'inline-block';
+                btn.style.background = "var(--primary)";
+                btn.disabled = false;
+                document.getElementById('ability-result').innerText = "";
             } else {
                 btn.style.display = 'none';
-                document.getElementById('ability-result').innerText = "대기 시간입니다.";
+                document.getElementById('ability-result').innerText = "이번 스테이지는 푹 쉬고 다음 라운드를 준비하세요!";
             }
         };
 
-        window.useAbility = () => {
-            document.getElementById('ability-result').innerText = `${myRole} 능력이 발동되었습니다. (시스템 기록 열람 등)`;
-            document.getElementById('ability-btn').disabled = true;
-        };
-
-        window.showVictory = (winner) => {
+        const showVictory = (winner) => {
             switchScreen('screen-victory');
-            document.getElementById('winner-name').innerText = `WINNER: ${winner}`;
+            document.getElementById('winner-name').innerText = `우리 반 최고의 탐정: ${winner} 팀!`;
             document.getElementById('final-password').innerText = secretPassword.join(" ");
         };
-
-        // 시스템 초기화 (테스트용)
-        window.resetSystem = async () => {
-            const querySnapshot = await getDocs(collection(db, "players"));
-            querySnapshot.forEach((d) => deleteDoc(doc(db, "players", d.id)));
-            await setDoc(doc(db, "game", "state"), { stage: 0, round: 1, lastWinner: "" });
-            alert("시스템 초기화 완료");
-            location.reload();
-        };
-
     </script>
 </body>
 </html>
