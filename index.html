@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>시크릿 베이스볼 : 함수의 암호를 풀어라! (Multiplayer Edition)</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- MathJax for rendering equations -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <!-- Background Overlays -->
+  <div id="game-bg-overlay" class="bg-waiting"></div>
+
+  <div id="app-container">
+    <!-- LOBBY SCREEN -->
+    <div id="lobby-screen" class="screen active">
+      <header class="lobby-header">
+        <h1 class="logo-text">SECRET BASEBALL</h1>
+        <p class="subtitle-text">함수의 암호를 풀어라! (Multiplayer Edition)</p>
+      </header>
+
+      <main class="lobby-main">
+        <div class="slots-container">
+          <h2 class="section-title">라인업 (참가 선수 슬롯)</h2>
+          <div id="slots-grid" class="slots-grid">
+            <!-- 12 slots dynamically populated -->
+          </div>
+        </div>
+
+        <div id="join-form-panel" class="join-form-panel hidden">
+          <h2 id="join-slot-title" class="section-title">1번 타자 등록</h2>
+          <div class="form-group">
+            <label for="player-nickname">닉네임</label>
+            <input type="text" id="player-nickname" placeholder="이름 또는 닉네임을 입력하세요" maxlength="8">
+          </div>
+          
+          <div class="class-selection-container">
+            <h3>선수 유형 선택 (능력치)</h3>
+            <div class="class-options">
+              <div class="class-card" data-class="홈런형">
+                <div class="class-icon">🔥</div>
+                <div class="class-name">홈런형 타자</div>
+                <div class="class-desc">"한 방이 있습니다."</div>
+                <div class="class-benefit">게임 중 3회 말과 4회 말에 팝업 창으로 전용 추가 힌트(정답 숫자 1개)를 제공받습니다.</div>
+              </div>
+              <div class="class-card" data-class="타율형">
+                <div class="class-icon">⚾</div>
+                <div class="class-name">타율형 타자</div>
+                <div class="class-desc">"투수를 잘 상대합니다."</div>
+                <div class="class-benefit">문제 풀이 2등만 해도 에이스와 동일하게 2개의 추리 슬롯을 얻습니다.</div>
+              </div>
+              <div class="class-card" data-class="도루형">
+                <div class="class-icon">⚡</div>
+                <div class="class-name">도루형 타자</div>
+                <div class="class-desc">"누구보다 빠릅니다."</div>
+                <div class="class-benefit">[초] 스테이지 시작 시, 5초 카운트다운 페널티 없이 즉시 문제를 풀기 시작합니다.</div>
+              </div>
+            </div>
+          </div>
+          
+          <button id="btn-join-game" class="btn btn-primary" disabled>라인업 등록 완료</button>
+        </div>
+      </main>
+
+      <footer class="lobby-footer">
+        <div class="status-indicator">
+          <span class="status-dot green"></span>
+          <span id="lobby-status-text">경기장 준비 중...</span>
+        </div>
+        <button id="btn-admin-login-trigger">*</button>
+      </footer>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="screen">
+      <!-- SCOREBOARD HEADER -->
+      <header id="scoreboard">
+        <div class="scoreboard-top">
+          <div class="scoreboard-inning">
+            <span class="scoreboard-label">INNING</span>
+            <span id="sb-inning-text" class="scoreboard-value font-digital">1회 초</span>
+          </div>
+          <div class="scoreboard-status">
+            <span class="scoreboard-label">STATUS</span>
+            <span id="sb-stage-text" class="scoreboard-value font-digital">문제 풀이</span>
+          </div>
+          <div class="scoreboard-timer">
+            <span class="scoreboard-label">TIME LIMIT</span>
+            <span id="sb-timer-text" class="scoreboard-value font-digital">01:00</span>
+          </div>
+        </div>
+        <div class="scoreboard-bottom">
+          <div class="my-player-tag">
+            <span class="badge" id="player-badge">타자</span>
+            <span id="my-player-name">선수명</span>
+          </div>
+          <div class="scoreboard-controls">
+            <button id="btn-view-records" class="btn btn-secondary">📋 기록지 열람</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- STAGES WRAPPERS -->
+      <main id="game-playground">
+        
+        <!-- [초] STAGE PANEL (Math Solving) -->
+        <section id="stage-top" class="game-stage-panel active">
+          <div class="stage-info-bar">
+            <h2>투수 투구 분석 (일차함수 식 구하기)</h2>
+            <p>3문제를 가장 빨리 해결하여 에이스(Rank 1) 등극에 도전하세요!</p>
+          </div>
+          <div id="math-problems-container" class="math-problems-container">
+            <!-- 3 Math questions -->
+            <div class="problem-card" id="problem-card-1">
+              <span class="problem-level basic">초급</span>
+              <div class="problem-question" id="q1-text">불러오는 중...</div>
+              <div class="problem-input-wrap">
+                <label>정답:</label>
+                <input type="number" id="ans-1" placeholder="정수 입력">
+              </div>
+            </div>
+            
+            <div class="problem-card" id="problem-card-2">
+              <span class="problem-level medium">중급</span>
+              <div class="problem-question" id="q2-text">불러오는 중...</div>
+              <div class="problem-input-wrap">
+                <label>정답:</label>
+                <input type="number" id="ans-2" placeholder="정수 입력">
+              </div>
+            </div>
+
+            <div class="problem-card" id="problem-card-3">
+              <span class="problem-level hard">고급</span>
+              <div class="problem-question" id="q3-text">불러오는 중...</div>
+              <div class="problem-input-wrap">
+                <label>정답:</label>
+                <input type="number" id="ans-3" placeholder="정수 입력">
+              </div>
+            </div>
+          </div>
+          <div class="math-action-bar">
+            <button id="btn-submit-answers" class="btn btn-success btn-large">분석 결과 전송 (제출)</button>
+            <div id="solve-feedback" class="feedback-msg"></div>
+          </div>
+        </section>
+
+        <!-- [말] STAGE PANEL (Bulls and Cows guessing) -->
+        <section id="stage-bottom" class="game-stage-panel">
+          <div class="stage-info-bar">
+            <h2>구종 암호 간파 (비밀번호 추리)</h2>
+            <p>4자리 정답 숫자를 맞혀 홈런을 노리세요! (동일 숫자 중복 없음)</p>
+          </div>
+          
+          <div id="guess-layout-container" class="guess-layout-container">
+            <!-- Dynamic guess slots rendered by JS -->
+          </div>
+
+          <div class="guess-action-bar hidden" id="guess-action-bar">
+            <button id="btn-submit-guess" class="btn btn-success btn-large">배트 휘두르기 (추리 제출)</button>
+          </div>
+          <div id="guess-feedback" class="feedback-msg"></div>
+        </section>
+
+        <!-- [광고시간] STAGE PANEL (Rest / Overview) -->
+        <section id="stage-ad" class="game-stage-panel">
+          <div class="ad-container">
+            <div class="ad-content-box">
+              <h2 class="font-digital">광고 시간 (클리닝 타임)</h2>
+              <p>양 팀 선수들 그라운드 정비 및 투수 구종 암호 셋업 대기 중...</p>
+              <div class="ad-timer-glow" id="ad-countdown-visual">10</div>
+            </div>
+          </div>
+        </section>
+        
+      </main>
+    </div>
+  </div>
+
+  <!-- COUNTDOWN OVERLAY (Steal batter bypasses this) -->
+  <div id="countdown-overlay" class="countdown-overlay hidden">
+    <div class="countdown-box">
+      <div id="countdown-title" class="countdown-title">1회 초 시작</div>
+      <div class="countdown-subtitle">5초 전 구장 정비 중...</div>
+      <div id="countdown-number" class="countdown-number">5</div>
+    </div>
+  </div>
+
+  <!-- VICTORY OVERLAY -->
+  <div id="victory-overlay" class="victory-overlay hidden">
+    <canvas id="fireworks-canvas"></canvas>
+    <div class="victory-content">
+      <img src="cheerleader.png" alt="응원단" class="cheerleader-image">
+      <div class="victory-box">
+        <h2>🎉 GAME SET! HOME RUN! 🎉</h2>
+        <p class="victory-message">
+          "축하합니다! 이번 경기에서 승리하셨습니다.<br>
+          승리의 기쁨을 선생님께 찾아가 알리세요!"
+        </p>
+        <div class="winner-info" id="winner-info">
+          우승자: 1번 타자 홍길동
+        </div>
+        <button id="btn-victory-close" class="btn btn-primary">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECORD BOOK MODAL (기록지 열람) -->
+  <div id="modal-record-book" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📋 선수 경기 기록지</h2>
+        <button class="modal-close" onclick="closeModal('modal-record-book')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="player-record-info">
+          <span>등록 슬롯: <strong id="record-slot-name">-</strong></span>
+          <span>선수 유형: <strong id="record-class-type">-</strong></span>
+        </div>
+        <div class="table-wrapper">
+          <table class="record-table">
+            <thead>
+              <tr>
+                <th>이닝</th>
+                <th>시도 번호</th>
+                <th>판정 결과 (S / B / O)</th>
+              </tr>
+            </thead>
+            <tbody id="record-table-body">
+              <!-- Filled via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN LOGIN MODAL -->
+  <div id="modal-admin-login" class="modal-overlay">
+    <div class="modal-content admin-auth-content">
+      <div class="modal-header">
+        <h2>감독용 관리자 인증</h2>
+        <button class="modal-close" onclick="closeModal('modal-admin-login')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="admin-password">비밀번호</label>
+          <input type="password" id="admin-password" placeholder="비밀번호 입력">
+        </div>
+        <button id="btn-admin-auth" class="btn btn-primary btn-full">인증하기</button>
+        <div id="admin-auth-error" class="error-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD MODAL -->
+  <div id="modal-admin-dashboard" class="modal-overlay">
+    <div class="modal-content admin-dashboard-content">
+      <div class="modal-header">
+        <h2>⚾ 감독 대시보드 (경기 관리)</h2>
+        <button class="modal-close" onclick="closeModal('modal-admin-dashboard')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="admin-grid-top">
+          <!-- Game State control card -->
+          <div class="admin-card">
+            <h3>경기 진행 현황</h3>
+            <div class="admin-state-row">
+              <label>현재 이닝:</label>
+              <select id="adm-inning">
+                <option value="1">1이닝</option>
+                <option value="2">2이닝</option>
+                <option value="3">3이닝</option>
+                <option value="4">4이닝</option>
+                <option value="5">5이닝</option>
+                <option value="6">6이닝</option>
+                <option value="7">7이닝</option>
+                <option value="8">8이닝</option>
+                <option value="9">9이닝</option>
+              </select>
+            </div>
+            <div class="admin-state-row">
+              <label>스테이지:</label>
+              <select id="adm-stage">
+                <option value="top">초 (문제풀이)</option>
+                <option value="bottom">말 (비밀번호 추리)</option>
+                <option value="ad">광고시간 (정비)</option>
+              </select>
+            </div>
+            <div class="admin-state-row">
+              <label>투수 암호(4자리):</label>
+              <input type="text" id="adm-target-code" maxlength="4">
+              <button id="btn-adm-random-code" class="btn btn-secondary btn-small">랜덤</button>
+            </div>
+            <div class="admin-btn-group">
+              <button id="btn-adm-update-state" class="btn btn-primary">상태 변경 저장</button>
+              <button id="btn-adm-force-next" class="btn btn-warning">➡️ 다음 스테이지 강제 이동</button>
+            </div>
+          </div>
+
+          <!-- Quick statistics / Game reset -->
+          <div class="admin-card">
+            <h3>경기 제어판</h3>
+            <div class="admin-actions">
+              <button id="btn-adm-reset-all" class="btn btn-danger btn-full">🚨 경기 초기화 (전체 포맷)</button>
+              <p class="card-warning">* 전체 포맷 시 게임 셋업(정답 코드, 슬롯 등록 상태, 이닝 상태)이 모두 초기값으로 재설정됩니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-card player-list-card">
+          <h3>선수 엔트리 상태 (실시간)</h3>
+          <div class="table-wrapper">
+            <table class="admin-player-table">
+              <thead>
+                <tr>
+                  <th>슬롯</th>
+                  <th>닉네임</th>
+                  <th>직업</th>
+                  <th>상태</th>
+                  <th>현재 이닝 풀이</th>
+                  <th>풀이 순위</th>
+                  <th>강제 퇴장</th>
+                </tr>
+              </thead>
+              <tbody id="adm-players-list">
+                <!-- Dynamically updated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Implementation -->
+  <script src="app.js"></script>
+</body>
+</html>
