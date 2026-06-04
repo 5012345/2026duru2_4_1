@@ -555,6 +555,11 @@ function checkPlayerSession() {
 const adminScreen = document.getElementById("admin-screen");
 
 function showScreen(screenId) {
+  const isAdmin = sessionStorage.getItem("adminAuth") === "true";
+  if (isAdmin && screenId !== "admin-screen") {
+    return;
+  }
+
   lobbyScreen.classList.remove("active");
   gameScreen.classList.remove("active");
   if (adminScreen) adminScreen.classList.remove("active");
@@ -577,6 +582,15 @@ function showScreen(screenId) {
 
 function handleGameStateTransition() {
   if (!gameState) return;
+
+  // Keep admin dashboard select dropdowns in sync if the admin dashboard is active
+  if (typeof admInning !== "undefined" && typeof admStage !== "undefined" && admInning && admStage) {
+    const isAdmin = sessionStorage.getItem("adminAuth") === "true";
+    if (isAdmin) {
+      admInning.value = gameState.inning.toString();
+      admStage.value = gameState.stage;
+    }
+  }
 
   // Clear previous state timers
   if (localTimerInterval) clearInterval(localTimerInterval);
@@ -1479,8 +1493,8 @@ function showAdminCode() {
   
   const rect = btnAdmRevealCode.getBoundingClientRect();
   tooltipEl.style.position = "absolute";
-  tooltipEl.style.left = `${rect.left + rect.width / 2}px`;
-  tooltipEl.style.top = `${rect.top - 45}px`;
+  tooltipEl.style.left = `${rect.left + rect.width / 2 + window.scrollX}px`;
+  tooltipEl.style.top = `${rect.top - 45 + window.scrollY}px`;
   tooltipEl.style.transform = "translateX(-50%)";
   tooltipEl.style.zIndex = "2500";
 }
