@@ -1414,3 +1414,68 @@ body {
   font-weight: 700;
   font-size: 0.95rem;
 }
+
+/* Custom list-based record book styling */
+.record-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.record-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: background-color 0.2s;
+}
+
+.record-list-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.record-list-item-inning {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.record-list-item-guess {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--neon-yellow);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.record-list-item-result {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--success-color);
+  font-weight: 700;
+}
+
+.record-list-item-hint {
+  color: var(--warning-color);
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.record-list-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px dashed var(--border-glass);
+  border-radius: 8px;
+}

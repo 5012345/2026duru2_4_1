@@ -815,6 +815,13 @@ function setupTopStage() {
   stageTopPanel.style.display = "flex";
   stageTopPanel.classList.add("active");
   
+  // Hide bottom hint container
+  const bottomHintContainer = document.getElementById("bottom-hint-container");
+  if (bottomHintContainer) {
+    bottomHintContainer.style.display = "none";
+    bottomHintContainer.innerHTML = "";
+  }
+  
   // Reset fields
   ans1.value = "";
   ans2.value = "";
@@ -907,14 +914,14 @@ btnSubmitAnswers.addEventListener("click", async () => {
   if (a1 === correctAnswers[0] && a2 === correctAnswers[1] && a3 === correctAnswers[2]) {
     // Correct!
     const hint = generateWeakHint(gameState.targetCode);
-    solveFeedback.innerHTML = `분석 완료! 상대 투수의 구질 분석에 성공하여 출루했습니다.<br><span class="math-hint-span">💡 투수 암호 힌트: ${hint}</span>`;
+    solveFeedback.innerText = "분석 완료! 상대 투수의 구질 분석에 성공하여 출루했습니다.";
     solveFeedback.className = "feedback-msg success";
     
     ans1.disabled = true;
     ans2.disabled = true;
     ans3.disabled = true;
 
-    // Register correct answer and rank in Firestore
+    // Register correct answer, rank, and hint in Firestore
     try {
       const playerRef = db.collection("players").doc(mySlotId);
       const stateRef = db.collection("game").doc("state");
@@ -932,6 +939,14 @@ btnSubmitAnswers.addEventListener("click", async () => {
         
         transaction.update(stateRef, {
           solveCount: newRank
+        });
+
+        // Save hint history in subcollection
+        const hintRef = db.collection("players").doc(mySlotId).collection("hints").doc(`inning_${gameState.inning}`);
+        transaction.set(hintRef, {
+          inning: gameState.inning,
+          hint: hint,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
       });
       
@@ -952,8 +967,7 @@ btnSubmitAnswers.addEventListener("click", async () => {
 });
 
 function markTopStageSolved() {
-  const hint = generateWeakHint(gameState.targetCode);
-  solveFeedback.innerHTML = `분석 완료! (${myPlayer.rank}등 에이스 출루 완료)<br><span class="math-hint-span">💡 투수 암호 힌트: ${hint}</span>`;
+  solveFeedback.innerText = `분석 완료! (${myPlayer.rank}등 에이스 출루 완료)`;
   solveFeedback.className = "feedback-msg success";
   ans1.disabled = true;
   ans2.disabled = true;
@@ -984,6 +998,19 @@ async function setupBottomStage() {
     btnSubmitGuess.innerText = "배트 휘두르기 (추리 제출)";
   }
   guessActionBar.classList.add("hidden");
+
+  // Show bottom hint container if they solved correctly
+  const bottomHintContainer = document.getElementById("bottom-hint-container");
+  if (bottomHintContainer) {
+    if (myPlayer && myPlayer.solvedCorrectly) {
+      const hint = generateWeakHint(gameState.targetCode);
+      bottomHintContainer.innerHTML = `<span class="math-hint-span">💡 투수 암호 힌트: ${hint}</span>`;
+      bottomHintContainer.style.display = "block";
+    } else {
+      bottomHintContainer.style.display = "none";
+      bottomHintContainer.innerHTML = "";
+    }
+  }
 
   if (!myPlayer) {
     guessLayoutContainer.innerHTML = `<div class="guess-no-perm">선수 등록이 되어 있지 않습니다. 로비에서 타자를 등록해 주세요.</div>`;
@@ -1035,15 +1062,24 @@ async function setupBottomStage() {
     guessLayoutContainer.innerHTML = `<div class="guess-no-perm">${message}</div>`;
   } else {
     try {
-      // Fetch past guesses for the current inning to restore on reload
+      // Fetch past guesses for the current inning to restore on reload (No index required)
       const guessesSnap = await db.collection("players").doc(mySlotId).collection("guesses")
         .where("inning", "==", gameState.inning)
-        .orderBy("timestamp", "asc")
         .get();
         
       const pastGuesses = [];
       guessesSnap.forEach(doc => {
         pastGuesses.push(doc.data());
+      });
+
+      // Sort client side by slotIndex
+      pastGuesses.sort((a, b) => {
+        if (a.slotIndex !== undefined && b.slotIndex !== undefined) {
+          return a.slotIndex - b.slotIndex;
+        }
+        const timeA = a.timestamp ? (a.timestamp.seconds || a.timestamp.toMillis() || 0) : 0;
+        const timeB = b.timestamp ? (b.timestamp.seconds || b.timestamp.toMillis() || 0) : 0;
+        return timeA - timeB;
       });
 
       // If they already submitted all allowed guesses, force waiting state
@@ -1272,37 +1308,85 @@ document.getElementById("btn-view-records").addEventListener("click", async () =
   document.getElementById("record-slot-name").innerText = myPlayer.slotName;
   document.getElementById("record-class-type").innerText = myPlayer.classType;
   
-  const tbody = document.getElementById("record-table-body");
-  tbody.innerHTML = '<tr><td colspan="3">불러오는 중...</td></tr>';
+  const guessesList = document.getElementById("record-guesses-list");
+  const hintsList = document.getElementById("record-hints-list");
+  
+  guessesList.innerHTML = '<li class="record-list-empty">불러오는 중...</li>';
+  hintsList.innerHTML = '<li class="record-list-empty">불러오는 중...</li>';
   
   showModal("modal-record-book");
 
   try {
-    const querySnapshot = await db.collection("players").doc(mySlotId)
+    // 1. Fetch guesses
+    const guessesSnap = await db.collection("players").doc(mySlotId)
       .collection("guesses")
-      .orderBy("timestamp", "asc")
       .get();
       
-    tbody.innerHTML = "";
-    if (querySnapshot.empty) {
-      tbody.innerHTML = '<tr><td colspan="3">아직 기록이 없습니다. 다음 이닝에서 타격을 시작하세요!</td></tr>';
-      return;
+    const pastGuesses = [];
+    guessesSnap.forEach(doc => {
+      pastGuesses.push(doc.data());
+    });
+    
+    // Sort guesses by inning and then slotIndex or timestamp
+    pastGuesses.sort((a, b) => {
+      if (a.inning !== b.inning) {
+        return a.inning - b.inning;
+      }
+      if (a.slotIndex !== undefined && b.slotIndex !== undefined) {
+        return a.slotIndex - b.slotIndex;
+      }
+      const timeA = a.timestamp ? (a.timestamp.seconds || a.timestamp.toMillis() || 0) : 0;
+      const timeB = b.timestamp ? (b.timestamp.seconds || b.timestamp.toMillis() || 0) : 0;
+      return timeA - timeB;
+    });
+
+    guessesList.innerHTML = "";
+    if (pastGuesses.length === 0) {
+      guessesList.innerHTML = '<li class="record-list-empty">아직 추리 기록이 없습니다.</li>';
+    } else {
+      pastGuesses.forEach(data => {
+        const li = document.createElement("li");
+        li.className = "record-list-item";
+        li.innerHTML = `
+          <span class="record-list-item-inning">${data.inning}회 말</span>
+          <span class="record-list-item-guess">${data.guess}</span>
+          <span class="record-list-item-result">${data.result.toUpperCase()}</span>
+        `;
+        guessesList.appendChild(li);
+      });
     }
 
-    querySnapshot.forEach(doc => {
-      const data = doc.data();
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${data.inning}회 말</td>
-        <td class="font-digital" style="color: var(--neon-yellow);">${data.guess}</td>
-        <td class="font-digital" style="color: var(--success-color); font-weight:700;">${data.result.toUpperCase()}</td>
-      `;
-      tbody.appendChild(tr);
+    // 2. Fetch hints
+    const hintsSnap = await db.collection("players").doc(mySlotId)
+      .collection("hints")
+      .get();
+      
+    const pastHints = [];
+    hintsSnap.forEach(doc => {
+      pastHints.push(doc.data());
     });
+    
+    pastHints.sort((a, b) => a.inning - b.inning);
+
+    hintsList.innerHTML = "";
+    if (pastHints.length === 0) {
+      hintsList.innerHTML = '<li class="record-list-empty">아직 획득한 힌트가 없습니다.</li>';
+    } else {
+      pastHints.forEach(data => {
+        const li = document.createElement("li");
+        li.className = "record-list-item";
+        li.innerHTML = `
+          <span class="record-list-item-inning">${data.inning}회 초</span>
+          <span class="record-list-item-hint">${data.hint}</span>
+        `;
+        hintsList.appendChild(li);
+      });
+    }
 
   } catch (err) {
     console.error("Error loading record book:", err);
-    tbody.innerHTML = '<tr><td colspan="3" class="error-msg">기록지를 로드하는 도중 오류가 발생했습니다.</td></tr>';
+    guessesList.innerHTML = '<li class="record-list-empty" style="color: var(--danger-color);">기록지 로드 오류</li>';
+    hintsList.innerHTML = '<li class="record-list-empty" style="color: var(--danger-color);">힌트 목록 로드 오류</li>';
   }
 });
 
@@ -1575,10 +1659,14 @@ function updateAdminPlayersTable() {
           lastGuessedInning: 0
         });
         
-        // Also wipe their guess history
+        // Also wipe their guess and hint history
         const guessesSnap = await db.collection("players").doc(slotId).collection("guesses").get();
+        const hintsSnap = await db.collection("players").doc(slotId).collection("hints").get();
         const batch = db.batch();
         guessesSnap.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        hintsSnap.forEach(doc => {
           batch.delete(doc.ref);
         });
         await batch.commit();
@@ -1809,10 +1897,14 @@ btnAdmResetAll.addEventListener("click", () => {
           lastGuessedInning: 0
         });
         
-        // delete guesses subcollection
+        // delete guesses and hints subcollection
         const guessesSnap = await pDoc.ref.collection("guesses").get();
         guessesSnap.forEach(gDoc => {
           batch.delete(gDoc.ref);
+        });
+        const hintsSnap = await pDoc.ref.collection("hints").get();
+        hintsSnap.forEach(hDoc => {
+          batch.delete(hDoc.ref);
         });
       }
 

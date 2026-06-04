@@ -183,6 +183,8 @@
             <p>4자리 정답 숫자를 맞혀 홈런을 노리세요! (동일 숫자 중복 없음)</p>
           </div>
           
+          <div id="bottom-hint-container" class="bottom-hint-container" style="display: none; margin-bottom: 20px; text-align: center; width: 100%;"></div>
+          
           <div id="guess-layout-container" class="guess-layout-container">
             <!-- Dynamic guess slots rendered by JS -->
           </div>
@@ -335,23 +337,23 @@
         <button class="modal-close" onclick="closeModal('modal-record-book')">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="player-record-info">
+        <div class="player-record-info" style="margin-bottom: 20px;">
           <span>등록 슬롯: <strong id="record-slot-name">-</strong></span>
           <span>선수 유형: <strong id="record-class-type">-</strong></span>
         </div>
-        <div class="table-wrapper">
-          <table class="record-table">
-            <thead>
-              <tr>
-                <th>이닝</th>
-                <th>시도 번호</th>
-                <th>판정 결과 (S / B / O)</th>
-              </tr>
-            </thead>
-            <tbody id="record-table-body">
-              <!-- Filled via JS -->
-            </tbody>
-          </table>
+        
+        <div class="record-section" style="margin-bottom: 25px;">
+          <h3 style="color: var(--warning-color); border-bottom: 1px solid var(--border-glass); padding-bottom: 8px; margin-bottom: 12px; font-size: 1.1rem; font-family: 'Noto Sans KR', sans-serif;">⚾ 비밀번호 추리 기록</h3>
+          <ul id="record-guesses-list" class="record-list">
+            <!-- Filled via JS -->
+          </ul>
+        </div>
+        
+        <div class="record-section">
+          <h3 style="color: var(--warning-color); border-bottom: 1px solid var(--border-glass); padding-bottom: 8px; margin-bottom: 12px; font-size: 1.1rem; font-family: 'Noto Sans KR', sans-serif;">💡 획득한 투수 암호 힌트</h3>
+          <ul id="record-hints-list" class="record-list">
+            <!-- Filled via JS -->
+          </ul>
         </div>
       </div>
     </div>
