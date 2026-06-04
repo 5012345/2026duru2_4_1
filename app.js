@@ -330,25 +330,39 @@ db.collection("players").onSnapshot(snapshot => {
   if (mySlotId) {
     const freshMe = playersList.find(p => p.slotId === mySlotId);
     if (freshMe) {
-      myPlayer = freshMe;
-      updateMyPlayerTag();
-      
-      // Asynchronous state synchronization to avoid race condition on reload
-      if (gameState && gameState.status === "playing") {
-        showScreen("game-screen");
-        if (gameState.stage === "bottom") {
-          setupBottomStage();
-        } else if (gameState.stage === "top" && myPlayer.solvedCorrectly) {
-          markTopStageSolved();
+      if (freshMe.active) {
+        myPlayer = freshMe;
+        updateMyPlayerTag();
+        
+        // Asynchronous state synchronization to avoid race condition on reload
+        if (gameState && gameState.status === "playing") {
+          showScreen("game-screen");
+          if (gameState.stage === "bottom") {
+            setupBottomStage();
+          } else if (gameState.stage === "top" && myPlayer.solvedCorrectly) {
+            markTopStageSolved();
+          }
+        } else {
+          showScreen("lobby-screen");
+          lobbyStatusText.innerText = "라인업 등록 완료! 감독님이 게임을 시작할 때까지 대기해주세요.";
+        }
+      } else {
+        // Player slot became inactive (kicked or reset)
+        if (myPlayer !== null) {
+          mySlotId = null;
+          myPlayer = null;
+          localStorage.removeItem("selectedSlotId");
+          showScreen("lobby-screen");
+          showCustomAlert("퇴장 알림", "감독에 의해 라인업에서 퇴장 처리되었습니다 또는 게임이 초기화되었습니다.");
         }
       }
     } else {
-      // My slot was kicked
-      mySlotId = null;
-      myPlayer = null;
-      localStorage.removeItem("selectedSlotId");
-      showScreen("lobby-screen");
-      showCustomAlert("퇴장 알림", "감독에 의해 라인업에서 퇴장 처리되었습니다.");
+      if (myPlayer !== null) {
+        mySlotId = null;
+        myPlayer = null;
+        localStorage.removeItem("selectedSlotId");
+        showScreen("lobby-screen");
+      }
     }
   }
 });
@@ -501,9 +515,6 @@ btnJoinGame.addEventListener("click", async () => {
     // Hide form panel
     joinFormPanel.classList.add("hidden");
     selectedLobbySlotId = null;
-    
-    // UI check
-    checkPlayerSession();
     
   } catch (err) {
     const feedback = document.getElementById("join-form-feedback");
