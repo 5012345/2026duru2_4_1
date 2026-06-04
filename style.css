@@ -1285,21 +1285,109 @@ body {
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
-#adm-code-text {
-  font-size: 1.25rem;
-  letter-spacing: 3px;
-  color: var(--warning-color);
-  font-weight: 700;
-  min-width: 55px;
-  text-align: center;
-  font-family: 'Orbitron', sans-serif;
-  text-shadow: 0 0 10px rgba(255, 251, 20, 0.6);
-  opacity: 1;
-  transition: opacity 0.2s ease;
+/* Standalone Admin Screen Layout */
+#admin-screen {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  padding: 30px;
+  backdrop-filter: blur(10px);
+  display: none;
+  flex-direction: column;
+  flex-grow: 1;
+  animation: fadeIn 0.4s ease;
+  margin-top: 20px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
 }
 
-#adm-code-text.hidden {
-  display: none !important;
+#admin-screen.active {
+  display: flex;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--border-glass);
+  padding-bottom: 20px;
+  margin-bottom: 25px;
+}
+
+.admin-header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-header-title .logo-text {
+  font-size: 2.2rem;
+  margin: 0;
+  text-align: left;
+}
+
+.admin-header-title .subtitle-text {
+  font-size: 0.95rem;
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.admin-main {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* Floating Reveal Tooltip */
+.reveal-tooltip {
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid var(--warning-color);
+  color: var(--warning-color);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  letter-spacing: 4px;
+  font-weight: 900;
+  box-shadow: 0 5px 20px rgba(255, 251, 20, 0.4);
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Player Waiting State Spinner UI */
+.guess-waiting-state {
+  text-align: center;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.baseball-spinner {
+  font-size: 4rem;
+  display: inline-block;
+  animation: spinAndGlow 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  filter: drop-shadow(0 0 10px rgba(255, 251, 20, 0.5));
+}
+
+.waiting-text {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--warning-color);
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(255, 251, 20, 0.2);
+}
+
+@keyframes spinAndGlow {
+  0% { transform: rotate(0deg) scale(1); filter: drop-shadow(0 0 5px var(--warning-color)); }
+  50% { transform: rotate(180deg) scale(1.15); filter: drop-shadow(0 0 20px var(--warning-color)); }
+  100% { transform: rotate(360deg) scale(1); filter: drop-shadow(0 0 5px var(--warning-color)); }
 }
 
 /* Custom modal content styles */

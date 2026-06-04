@@ -206,6 +206,97 @@
         
       </main>
     </div>
+
+    <!-- STANDALONE ADMIN SCREEN -->
+    <div id="admin-screen" class="screen">
+      <header class="admin-header">
+        <div class="admin-header-title">
+          <h1 class="logo-text">감독 대시보드</h1>
+          <p class="subtitle-text">Secret Baseball 경기 관리 및 감독 모니터링</p>
+        </div>
+        <button id="btn-admin-logout" class="btn btn-secondary btn-small">⚾ 로그아웃</button>
+      </header>
+
+      <main class="admin-main">
+        <div class="admin-grid-top">
+          <!-- Game State control card -->
+          <div class="admin-card">
+            <h3>경기 진행 현황</h3>
+            <div class="admin-state-row">
+              <label>현재 이닝:</label>
+              <select id="adm-inning">
+                <option value="1">1이닝</option>
+                <option value="2">2이닝</option>
+                <option value="3">3이닝</option>
+                <option value="4">4이닝</option>
+                <option value="5">5이닝</option>
+                <option value="6">6이닝</option>
+                <option value="7">7이닝</option>
+                <option value="8">8이닝</option>
+                <option value="9">9이닝</option>
+              </select>
+            </div>
+            <div class="admin-state-row">
+              <label>스테이지:</label>
+              <select id="adm-stage">
+                <option value="top">초 (문제풀이)</option>
+                <option value="bottom">말 (비밀번호 추리)</option>
+                <option value="ad">광고시간 (정비)</option>
+              </select>
+            </div>
+            <div class="admin-state-row">
+              <label>투수 암호:</label>
+              <div class="adm-code-reveal-container">
+                <button id="btn-adm-reveal-code" class="btn btn-dark btn-small">투수 암호 확인 👁️</button>
+              </div>
+            </div>
+            <div class="admin-state-row">
+              <label>새 암호 설정:</label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="adm-target-code" maxlength="4" placeholder="4자리 숫자" style="width: 100px; text-align: center; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-glass); color: white; padding: 6px 12px; border-radius: 6px; font-family: 'Orbitron', sans-serif; letter-spacing: 2px;">
+                <button id="btn-adm-random-code" class="btn btn-secondary btn-small">랜덤 생성</button>
+              </div>
+            </div>
+            <div class="admin-btn-group">
+              <button id="btn-adm-update-state" class="btn btn-primary">상태 변경 저장</button>
+              <button id="btn-adm-force-next" class="btn btn-warning">➡️ 다음 스테이지 강제 이동</button>
+            </div>
+            <div id="adm-error-msg" class="feedback-msg" style="margin-top: 15px; font-size: 0.9rem; min-height: 20px;"></div>
+          </div>
+
+          <!-- Quick statistics / Game reset -->
+          <div class="admin-card">
+            <h3>경기 제어판</h3>
+            <div class="admin-actions">
+              <button id="btn-adm-reset-all" class="btn btn-danger btn-full">🚨 경기 초기화 (전체 포맷)</button>
+              <p class="card-warning">* 전체 포맷 시 게임 셋업(정답 코드, 슬롯 등록 상태, 이닝 상태)이 모두 초기값으로 재설정됩니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-card player-list-card">
+          <h3>선수 엔트리 상태 (실시간)</h3>
+          <div class="table-wrapper">
+            <table class="admin-player-table">
+              <thead>
+                <tr>
+                  <th>슬롯</th>
+                  <th>닉네임</th>
+                  <th>직업</th>
+                  <th>상태</th>
+                  <th>현재 이닝 풀이</th>
+                  <th>풀이 순위</th>
+                  <th>강제 퇴장</th>
+                </tr>
+              </thead>
+              <tbody id="adm-players-list">
+                <!-- Dynamically updated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
   </div>
 
   <!-- COUNTDOWN OVERLAY (Steal batter bypasses this) -->
@@ -268,90 +359,7 @@
 
   <!-- (Admin authentication modal removed as it is now embedded inline in the lobby footer) -->
 
-  <!-- ADMIN DASHBOARD MODAL -->
-  <div id="modal-admin-dashboard" class="modal-overlay">
-    <div class="modal-content admin-dashboard-content">
-      <div class="modal-header">
-        <h2>⚾ 감독 대시보드 (경기 관리)</h2>
-        <button class="modal-close" onclick="closeModal('modal-admin-dashboard')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="admin-grid-top">
-          <!-- Game State control card -->
-          <div class="admin-card">
-            <h3>경기 진행 현황</h3>
-            <div class="admin-state-row">
-              <label>현재 이닝:</label>
-              <select id="adm-inning">
-                <option value="1">1이닝</option>
-                <option value="2">2이닝</option>
-                <option value="3">3이닝</option>
-                <option value="4">4이닝</option>
-                <option value="5">5이닝</option>
-                <option value="6">6이닝</option>
-                <option value="7">7이닝</option>
-                <option value="8">8이닝</option>
-                <option value="9">9이닝</option>
-              </select>
-            </div>
-            <div class="admin-state-row">
-              <label>스테이지:</label>
-              <select id="adm-stage">
-                <option value="top">초 (문제풀이)</option>
-                <option value="bottom">말 (비밀번호 추리)</option>
-                <option value="ad">광고시간 (정비)</option>
-              </select>
-            </div>
-            <div class="admin-state-row">
-              <label>투수 암호:</label>
-              <div class="adm-code-reveal-container">
-                <button id="btn-adm-reveal-code" class="btn btn-dark btn-small">투수 암호 확인 👁️</button>
-                <span id="adm-code-text" class="font-digital hidden"></span>
-              </div>
-              <input type="text" id="adm-target-code" maxlength="4" placeholder="암호 수정" style="width: 80px;">
-              <button id="btn-adm-random-code" class="btn btn-secondary btn-small">랜덤</button>
-            </div>
-            <div class="admin-btn-group">
-              <button id="btn-adm-update-state" class="btn btn-primary">상태 변경 저장</button>
-              <button id="btn-adm-force-next" class="btn btn-warning">➡️ 다음 스테이지 강제 이동</button>
-            </div>
-            <div id="adm-error-msg" class="feedback-msg" style="margin-top: 15px; font-size: 0.9rem; min-height: 20px;"></div>
-          </div>
 
-          <!-- Quick statistics / Game reset -->
-          <div class="admin-card">
-            <h3>경기 제어판</h3>
-            <div class="admin-actions">
-              <button id="btn-adm-reset-all" class="btn btn-danger btn-full">🚨 경기 초기화 (전체 포맷)</button>
-              <p class="card-warning">* 전체 포맷 시 게임 셋업(정답 코드, 슬롯 등록 상태, 이닝 상태)이 모두 초기값으로 재설정됩니다.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="admin-card player-list-card">
-          <h3>선수 엔트리 상태 (실시간)</h3>
-          <div class="table-wrapper">
-            <table class="admin-player-table">
-              <thead>
-                <tr>
-                  <th>슬롯</th>
-                  <th>닉네임</th>
-                  <th>직업</th>
-                  <th>상태</th>
-                  <th>현재 이닝 풀이</th>
-                  <th>풀이 순위</th>
-                  <th>강제 퇴장</th>
-                </tr>
-              </thead>
-              <tbody id="adm-players-list">
-                <!-- Dynamically updated -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- CUSTOM ALERT MODAL -->
   <div id="modal-custom-alert" class="modal-overlay">

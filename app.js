@@ -552,15 +552,21 @@ function checkPlayerSession() {
   }
 }
 
+const adminScreen = document.getElementById("admin-screen");
+
 function showScreen(screenId) {
   lobbyScreen.classList.remove("active");
   gameScreen.classList.remove("active");
+  if (adminScreen) adminScreen.classList.remove("active");
   
   if (screenId === "lobby-screen") {
     lobbyScreen.classList.add("active");
     gameBgOverlay.className = "bg-waiting";
   } else if (screenId === "game-screen") {
     gameScreen.classList.add("active");
+  } else if (screenId === "admin-screen") {
+    if (adminScreen) adminScreen.classList.add("active");
+    gameBgOverlay.className = "bg-waiting";
   }
 }
 
@@ -895,6 +901,18 @@ function setupBottomStage() {
 
   if (!myPlayer) return;
 
+  // Check if player has already submitted guess for the current inning
+  if (myPlayer.lastGuessedInning === gameState.inning) {
+    guessLayoutContainer.innerHTML = `
+      <div class="guess-waiting-state">
+        <div class="baseball-spinner">⚾</div>
+        <p class="waiting-text">제출 완료. 다른 선수의 타격이 끝나기를 대기 중입니다... ⚾</p>
+      </div>
+    `;
+    guessActionBar.classList.add("hidden");
+    return;
+  }
+
   // 2. 타율/에이스 능력 구현: 추리 슬롯 개수 판정
   let slotCount = 0;
   let message = "";
@@ -963,19 +981,21 @@ function setupDigitBoxesJumping() {
       input.value = input.value.replace(/[^0-9]/g, "");
       
       if (input.value.length === 1) {
-        // Find next input in same slot
         const nextInput = allInputs[index + 1];
-        if (nextInput && nextInput.className === input.className) {
+        if (nextInput && nextInput.classList.contains(input.classList[1])) {
           nextInput.focus();
         }
       }
     });
 
     input.addEventListener("keydown", (e) => {
-      if (e.key === "Backspace" && input.value.length === 0) {
-        const prevInput = allInputs[index - 1];
-        if (prevInput && prevInput.className === input.className) {
-          prevInput.focus();
+      if (e.key === "Backspace") {
+        if (input.value.length === 0) {
+          const prevInput = allInputs[index - 1];
+          if (prevInput && prevInput.classList.contains(input.classList[1])) {
+            prevInput.focus();
+            prevInput.value = "";
+          }
         }
       }
     });
@@ -1259,6 +1279,8 @@ function checkAdminSessionUI() {
   if (isAdmin) {
     if (loginFields) loginFields.classList.add("hidden");
     if (loggedInFields) loggedInFields.classList.remove("hidden");
+    showScreen("admin-screen");
+    openAdminDashboard();
   } else {
     if (loginFields) loginFields.classList.remove("hidden");
     if (loggedInFields) loggedInFields.classList.add("hidden");
@@ -1282,22 +1304,29 @@ if (btnLobbyAdminAuth) {
 
 if (btnLobbyAdminDashboard) {
   btnLobbyAdminDashboard.addEventListener("click", () => {
+    showScreen("admin-screen");
     openAdminDashboard();
   });
 }
 
+// Standalone Admin Logout
+const btnAdminLogout = document.getElementById("btn-admin-logout");
+if (btnAdminLogout) {
+  btnAdminLogout.addEventListener("click", () => {
+    sessionStorage.removeItem("adminAuth");
+    if (adminTimerInterval) {
+      clearInterval(adminTimerInterval);
+      adminTimerInterval = null;
+    }
+    checkAdminSessionUI();
+    showScreen("lobby-screen");
+  });
+}
+
 async function openAdminDashboard() {
-  showModal("modal-admin-dashboard");
-  
-  // Hide secret code by default when opening dashboard
-  const admCodeText = document.getElementById("adm-code-text");
-  const btnAdmRevealCode = document.getElementById("btn-adm-reveal-code");
-  if (admCodeText && btnAdmRevealCode) {
-    admCodeText.innerText = "";
-    admCodeText.classList.add("hidden");
-    admCodeText.style.opacity = "0";
-    btnAdmRevealCode.innerText = "투수 암호 확인 👁️";
-  }
+  // Reset password tooltip state on reload
+  hideAdminCode();
+  isToggledOn = false;
 
   const admErrorMsg = document.getElementById("adm-error-msg");
   if (admErrorMsg) {
@@ -1405,23 +1434,35 @@ function updateAdminPlayersTable() {
 
 // Target code secret reveal toggle and press-and-hold bindings
 const btnAdmRevealCode = document.getElementById("btn-adm-reveal-code");
-const admCodeText = document.getElementById("adm-code-text");
 
 let pressStartTime = 0;
 let isHolding = false;
 let isToggledOn = false;
+let tooltipEl = null;
 
 function showAdminCode() {
   if (!gameState) return;
-  admCodeText.innerText = gameState.targetCode;
-  admCodeText.classList.remove("hidden");
-  admCodeText.style.opacity = "1";
+  
+  if (tooltipEl) tooltipEl.remove();
+  
+  tooltipEl = document.createElement("div");
+  tooltipEl.className = "reveal-tooltip font-digital";
+  tooltipEl.innerText = gameState.targetCode;
+  document.body.appendChild(tooltipEl);
+  
+  const rect = btnAdmRevealCode.getBoundingClientRect();
+  tooltipEl.style.position = "absolute";
+  tooltipEl.style.left = `${rect.left + rect.width / 2}px`;
+  tooltipEl.style.top = `${rect.top - 45}px`;
+  tooltipEl.style.transform = "translateX(-50%)";
+  tooltipEl.style.zIndex = "2500";
 }
 
 function hideAdminCode() {
-  admCodeText.innerText = "";
-  admCodeText.classList.add("hidden");
-  admCodeText.style.opacity = "0";
+  if (tooltipEl) {
+    tooltipEl.remove();
+    tooltipEl = null;
+  }
 }
 
 function handlePressStart() {
@@ -1493,10 +1534,6 @@ if (btnAdmRevealCode) {
 
 btnAdmRandomCode.addEventListener("click", () => {
   admTargetCode.value = generateTargetCode();
-  // Force update display if currently revealed
-  if (!admCodeText.classList.contains("hidden")) {
-    admCodeText.innerText = admTargetCode.value;
-  }
 });
 
 btnAdmUpdateState.addEventListener("click", async () => {
@@ -1564,10 +1601,6 @@ btnAdmUpdateState.addEventListener("click", async () => {
       admErrorMsg.innerText = "설정이 동기화되었습니다.";
       admErrorMsg.className = "feedback-msg success";
     }
-    
-    setTimeout(() => {
-      closeModal("modal-admin-dashboard");
-    }, 800);
 
   } catch (err) {
     if (admErrorMsg) {
@@ -1642,7 +1675,6 @@ btnAdmResetAll.addEventListener("click", () => {
       await batch.commit();
       
       showCustomAlert("초기화 완료", "경기 포맷 및 초기화가 성공적으로 완료되었습니다!");
-      closeModal("modal-admin-dashboard");
     } catch (err) {
       showCustomAlert("초기화 실패", "초기화에 실패했습니다: " + err);
     }
