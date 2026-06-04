@@ -605,27 +605,32 @@ body {
 
 /* TOP [초] Math Solving Panel styles */
 .math-problems-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
   margin-bottom: 30px;
-}
-
-@media (min-width: 768px) {
-  .math-problems-container {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 .problem-card {
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: 20px;
+  padding: 20px 30px;
   display: flex;
-  flex-direction: column;
-  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
   transition: all 0.3s;
+}
+
+@media (max-width: 768px) {
+  .problem-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px;
+    gap: 15px;
+  }
 }
 
 .problem-card:hover {
@@ -633,14 +638,28 @@ body {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
+.problem-left-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-grow: 1;
+}
+
+@media (max-width: 768px) {
+  .problem-left-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
 .problem-level {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  display: inline-block;
 }
 
 .problem-level.basic { background: rgba(0, 229, 255, 0.15); color: #00e5ff; }
@@ -648,25 +667,19 @@ body {
 .problem-level.hard { background: rgba(255, 23, 68, 0.15); color: #ff1744; }
 
 .problem-question {
-  margin: 30px 0 20px 0;
-  font-size: 1.25rem;
-  line-height: 1.6;
-  text-align: center;
+  font-size: 1.2rem;
+  line-height: 1.5;
+  text-align: left;
   font-weight: 700;
-  min-height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin: 0;
+  display: block;
 }
 
 .problem-input-wrap {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
-  margin-top: auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 15px;
+  flex-shrink: 0;
 }
 
 .problem-input-wrap label {
@@ -687,7 +700,7 @@ body {
 }
 
 .problem-input-wrap input:focus {
-  border-color: var(--primary-color);
+  border-color: var(--warning-color);
 }
 
 .math-action-bar {
@@ -1213,4 +1226,34 @@ body {
     transform: translate(0, 0) rotate(0deg);
     opacity: 1;
   }
+}
+
+/* Custom reveal code styles */
+.adm-code-reveal-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-glass);
+}
+
+#adm-code-text {
+  font-size: 1.15rem;
+  letter-spacing: 2px;
+  color: var(--warning-color);
+  font-weight: 700;
+  min-width: 45px;
+  text-align: center;
+}
+
+#adm-code-text.hidden {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* Custom modal content styles */
+.alert-content, .confirm-content {
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(27, 77, 62, 0.2);
+  border: 2px solid var(--primary-color);
 }

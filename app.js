@@ -292,7 +292,8 @@ async function ensureDatabaseInitialized() {
           active: false,
           solvedCorrectly: false,
           solvedAt: null,
-          rank: 0
+          rank: 0,
+          lastGuessedInning: 0
         });
       }
     }
@@ -331,13 +332,22 @@ db.collection("players").onSnapshot(snapshot => {
     if (freshMe) {
       myPlayer = freshMe;
       updateMyPlayerTag();
+      
+      // Asynchronous state synchronization to avoid race condition on reload
+      if (gameState && gameState.status === "playing") {
+        if (gameState.stage === "bottom") {
+          setupBottomStage();
+        } else if (gameState.stage === "top" && myPlayer.solvedCorrectly) {
+          markTopStageSolved();
+        }
+      }
     } else {
       // My slot was kicked
       mySlotId = null;
       myPlayer = null;
       localStorage.removeItem("selectedSlotId");
       showScreen("lobby-screen");
-      alert("감독에 의해 라인업에서 퇴장 처리되었습니다.");
+      showCustomAlert("퇴장 알림", "감독에 의해 라인업에서 퇴장 처리되었습니다.");
     }
   }
 });
@@ -401,7 +411,7 @@ function renderSlots() {
       
       card.addEventListener("click", () => {
         if (gameState && gameState.status === "playing") {
-          alert("이미 경기가 시작되었습니다. 대기방 모드일 때만 입장할 수 있습니다.");
+          showCustomAlert("경기 시작됨", "이미 경기가 시작되었습니다. 대기방 모드일 때만 입장할 수 있습니다.");
           return;
         }
         selectLobbySlot(player.slotId, player.slotName);
@@ -471,13 +481,18 @@ btnJoinGame.addEventListener("click", async () => {
         classType: selectedClassType,
         solvedCorrectly: false,
         solvedAt: null,
-        rank: 0
+        rank: 0,
+        lastGuessedInning: 0
       });
     });
 
     mySlotId = selectedLobbySlotId;
     localStorage.setItem("selectedSlotId", mySlotId);
     
+    // Clear feedback
+    const feedback = document.getElementById("join-form-feedback");
+    if (feedback) feedback.innerText = "";
+
     // Hide form panel
     joinFormPanel.classList.add("hidden");
     selectedLobbySlotId = null;
@@ -486,7 +501,11 @@ btnJoinGame.addEventListener("click", async () => {
     checkPlayerSession();
     
   } catch (err) {
-    alert(err);
+    const feedback = document.getElementById("join-form-feedback");
+    if (feedback) {
+      feedback.innerText = err;
+      feedback.className = "feedback-msg error";
+    }
   }
 });
 
@@ -887,9 +906,8 @@ function setupBottomStage() {
       // 3회이면 0번째 숫자, 4회이면 1번째 숫자 노출
       const hintDigit = targetCode[gameState.inning - 3];
       
-      // Delay alert slightly to let UI render first
       setTimeout(() => {
-        alert(`🔥 [홈런형 타자 특별 힌트] 🔥\n상대 투수의 4자리 암호에 숫자 '${hintDigit}'가 포함되어 있습니다!`);
+        showCustomAlert("🔥 홈런형 타자 특별 힌트 🔥", `상대 투수의 4자리 암호에 숫자 '${hintDigit}'가 포함되어 있습니다!`);
       }, 500);
     }
   }
@@ -964,14 +982,16 @@ document.getElementById("btn-submit-guess").addEventListener("click", async () =
     });
 
     if (guessVal.length < 4) {
-      alert(`타격 슬롯 ${i}의 4자리 숫자를 모두 입력해 주세요!`);
+      guessFeedback.innerText = `타격 슬롯 ${i}의 4자리 숫자를 모두 입력해 주세요!`;
+      guessFeedback.className = "feedback-msg error";
       return;
     }
     
     // Check for duplicate digits in a single guess
     const uniqueDigits = new Set(guessVal);
     if (uniqueDigits.size < 4) {
-      alert(`타격 슬롯 ${i}의 입력값에 중복된 숫자가 있습니다. 중복되지 않도록 입력해주세요!`);
+      guessFeedback.innerText = `타격 슬롯 ${i}의 입력값에 중복된 숫자가 있습니다. 중복되지 않도록 입력해주세요!`;
+      guessFeedback.className = "feedback-msg error";
       return;
     }
     
@@ -1006,6 +1026,12 @@ document.getElementById("btn-submit-guess").addEventListener("click", async () =
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
+
+    // Set lastGuessedInning to record that player has completed guessing for this inning
+    const playerRef = db.collection("players").doc(mySlotId);
+    batch.update(playerRef, {
+      lastGuessedInning: gameState.inning
+    });
 
     await batch.commit();
 
@@ -1247,6 +1273,21 @@ if (btnLobbyAdminDashboard) {
 async function openAdminDashboard() {
   showModal("modal-admin-dashboard");
   
+  // Hide secret code by default when opening dashboard
+  const admCodeText = document.getElementById("adm-code-text");
+  const btnAdmRevealCode = document.getElementById("btn-adm-reveal-code");
+  if (admCodeText && btnAdmRevealCode) {
+    admCodeText.innerText = "****";
+    admCodeText.classList.add("hidden");
+    btnAdmRevealCode.innerText = "정답 비밀번호 확인하기";
+  }
+
+  const admErrorMsg = document.getElementById("adm-error-msg");
+  if (admErrorMsg) {
+    admErrorMsg.innerText = "";
+    admErrorMsg.className = "feedback-msg";
+  }
+
   if (gameState) {
     admInning.value = gameState.inning.toString();
     admStage.value = gameState.stage;
@@ -1271,9 +1312,33 @@ function updateAdminPlayersTable() {
     
     let statusText = player.active ? "접속중" : "대기";
     let statusDot = player.active ? "active" : "inactive";
+    
+    // Status text and style logic based on current game stage (Inning-specific updates)
     let solvedText = "-";
+    let solvedStyle = "color: var(--text-secondary);";
     if (gameState && gameState.status === "playing" && gameState.stage !== "waiting") {
-      solvedText = player.solvedCorrectly ? "✅ 완료" : "❌ 풀이중";
+      if (gameState.stage === "top") {
+        if (player.solvedCorrectly) {
+          solvedText = "제출 완료 ⚾";
+          solvedStyle = "color: var(--success-color); font-weight: bold;";
+        } else {
+          solvedText = "문제를 푸는 중 ✍️";
+          solvedStyle = "color: var(--text-secondary);";
+        }
+      } else if (gameState.stage === "bottom") {
+        if (player.lastGuessedInning === gameState.inning) {
+          solvedText = "추리 완료 🔒";
+          solvedStyle = "color: var(--success-color); font-weight: bold;";
+        } else if (player.solvedCorrectly) {
+          solvedText = "비밀번호 추리 중 🤔";
+          solvedStyle = "color: var(--warning-color); font-weight: bold;";
+        } else {
+          solvedText = "추리 불가 ❌";
+          solvedStyle = "color: var(--danger-color);";
+        }
+      } else {
+        solvedText = "정비 중 ⚾";
+      }
     }
 
     tr.innerHTML = `
@@ -1281,7 +1346,7 @@ function updateAdminPlayersTable() {
       <td><strong>${player.nickname || '-'}</strong></td>
       <td>${player.classType || '-'}</td>
       <td><span class="status-dot-mini ${statusDot}"></span>${statusText}</td>
-      <td>${solvedText}</td>
+      <td style="${solvedStyle}">${solvedText}</td>
       <td>${player.rank > 0 ? `${player.rank}등` : '-'}</td>
       <td>
         <button class="btn btn-danger btn-small btn-kick" data-id="${player.slotId}" ${!player.active ? 'disabled' : ''}>퇴장</button>
@@ -1291,19 +1356,20 @@ function updateAdminPlayersTable() {
     tbody.appendChild(tr);
   });
   
-  // Kick listener
+  // Kick listener using custom modal confirmations
   const kickButtons = tbody.querySelectorAll(".btn-kick");
   kickButtons.forEach(btn => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", () => {
       const slotId = btn.getAttribute("data-id");
-      if (confirm(`해당 슬롯(${slotId}) 플레이어를 강제 퇴장시키겠습니까?`)) {
+      showCustomConfirm("선수 강제 퇴장", `${slotId} 선수를 엔트리에서 퇴장시키겠습니까?`, async () => {
         await db.collection("players").doc(slotId).update({
           active: false,
           nickname: "",
           classType: "",
           solvedCorrectly: false,
           solvedAt: null,
-          rank: 0
+          rank: 0,
+          lastGuessedInning: 0
         });
         
         // Also wipe their guess history
@@ -1315,13 +1381,35 @@ function updateAdminPlayersTable() {
         await batch.commit();
         
         updateAdminPlayersTable();
-      }
+      });
     });
+  });
+}
+
+// Target code secret reveal toggle bindings
+const btnAdmRevealCode = document.getElementById("btn-adm-reveal-code");
+const admCodeText = document.getElementById("adm-code-text");
+
+if (btnAdmRevealCode) {
+  btnAdmRevealCode.addEventListener("click", () => {
+    if (admCodeText.classList.contains("hidden")) {
+      admCodeText.innerText = gameState ? gameState.targetCode : "****";
+      admCodeText.classList.remove("hidden");
+      btnAdmRevealCode.innerText = "비밀번호 숨기기";
+    } else {
+      admCodeText.innerText = "****";
+      admCodeText.classList.add("hidden");
+      btnAdmRevealCode.innerText = "정답 비밀번호 확인하기";
+    }
   });
 }
 
 btnAdmRandomCode.addEventListener("click", () => {
   admTargetCode.value = generateTargetCode();
+  // Force update display if currently revealed
+  if (!admCodeText.classList.contains("hidden")) {
+    admCodeText.innerText = admTargetCode.value;
+  }
 });
 
 btnAdmUpdateState.addEventListener("click", async () => {
@@ -1329,15 +1417,22 @@ btnAdmUpdateState.addEventListener("click", async () => {
   const inningVal = parseInt(admInning.value);
   const stageVal = admStage.value;
   const codeVal = admTargetCode.value.trim();
+  const admErrorMsg = document.getElementById("adm-error-msg");
 
   if (codeVal.length !== 4 || isNaN(parseInt(codeVal))) {
-    alert("비밀번호는 4자리 숫자여야 합니다.");
+    if (admErrorMsg) {
+      admErrorMsg.innerText = "비밀번호는 4자리 숫자여야 합니다.";
+      admErrorMsg.className = "feedback-msg error";
+    }
     return;
   }
   
   const uniqueCode = new Set(codeVal);
   if (uniqueCode.size < 4) {
-    alert("비밀번호 숫자는 서로 달라야 합니다 (중복 불가).");
+    if (admErrorMsg) {
+      admErrorMsg.innerText = "비밀번호 숫자는 서로 달라야 합니다 (중복 불가).";
+      admErrorMsg.className = "feedback-msg error";
+    }
     return;
   }
 
@@ -1367,7 +1462,8 @@ btnAdmUpdateState.addEventListener("click", async () => {
         batch.update(pDoc.ref, {
           solvedCorrectly: false,
           solvedAt: null,
-          rank: 0
+          rank: 0,
+          lastGuessedInning: 0
         });
       });
     }
@@ -1375,72 +1471,93 @@ btnAdmUpdateState.addEventListener("click", async () => {
     batch.update(db.collection("game").doc("state"), updates);
     await batch.commit();
     
-    alert("경기 상태 설정이 정상적으로 동기화되었습니다.");
-    closeModal("modal-admin-dashboard");
-  } catch (err) {
-    alert("에러 발생: " + err);
-  }
-});
-
-btnAdmForceNext.addEventListener("click", async () => {
-  if (!confirm("다음 스테이지로 강제 이동하시겠습니까?")) return;
-  try {
-    await autoAdvanceStage();
-    // Refresh admin modal selects
-    if (gameState) {
-      admInning.value = gameState.inning.toString();
-      admStage.value = gameState.stage;
-      admTargetCode.value = gameState.targetCode;
+    if (admErrorMsg) {
+      admErrorMsg.innerText = "설정이 동기화되었습니다.";
+      admErrorMsg.className = "feedback-msg success";
     }
-  } catch (err) {
-    alert("오류: " + err);
-  }
-});
-
-btnAdmResetAll.addEventListener("click", async () => {
-  if (!confirm("🚨 정말로 경기를 전체 초기화하시겠습니까?\n모든 선수 데이터와 세션 기록이 영구적으로 지워집니다.")) return;
-
-  try {
-    const batch = db.batch();
     
-    // Reset player slots
-    const playersSnap = await db.collection("players").get();
-    for (let pDoc of playersSnap.docs) {
-      batch.update(pDoc.ref, {
-        active: false,
-        nickname: "",
-        classType: "",
-        solvedCorrectly: false,
-        solvedAt: null,
-        rank: 0
-      });
-      
-      // delete guesses subcollection
-      const guessesSnap = await pDoc.ref.collection("guesses").get();
-      guessesSnap.forEach(gDoc => {
-        batch.delete(gDoc.ref);
-      });
-    }
+    setTimeout(() => {
+      closeModal("modal-admin-dashboard");
+    }, 800);
 
-    // Reset game state to lobby status
-    const stateRef = db.collection("game").doc("state");
-    batch.update(stateRef, {
-      status: "waiting",
-      inning: 1,
-      stage: "top",
-      stageEndTime: null,
-      winningPlayer: null,
-      targetCode: generateTargetCode(),
-      problems: generateThreeProblems(),
-      solveCount: 0
-    });
-
-    await batch.commit();
-    alert("경기 포맷 및 초기화가 성공적으로 완료되었습니다!");
-    closeModal("modal-admin-dashboard");
   } catch (err) {
-    alert("초기화 실패: " + err);
+    if (admErrorMsg) {
+      admErrorMsg.innerText = "에러 발생: " + err;
+      admErrorMsg.className = "feedback-msg error";
+    }
   }
+});
+
+btnAdmForceNext.addEventListener("click", () => {
+  const admErrorMsg = document.getElementById("adm-error-msg");
+  showCustomConfirm("강제 이동", "다음 스테이지로 강제 이동하시겠습니까?", async () => {
+    try {
+      await autoAdvanceStage();
+      // Refresh admin modal selects
+      if (gameState) {
+        admInning.value = gameState.inning.toString();
+        admStage.value = gameState.stage;
+        admTargetCode.value = gameState.targetCode;
+      }
+      if (admErrorMsg) {
+        admErrorMsg.innerText = "스테이지가 변경되었습니다.";
+        admErrorMsg.className = "feedback-msg success";
+      }
+    } catch (err) {
+      if (admErrorMsg) {
+        admErrorMsg.innerText = "오류: " + err;
+        admErrorMsg.className = "feedback-msg error";
+      }
+    }
+  });
+});
+
+btnAdmResetAll.addEventListener("click", () => {
+  showCustomConfirm("경기 전체 초기화", "🚨 정말로 경기를 전체 초기화하시겠습니까?\n모든 선수 데이터와 세션 기록이 영구적으로 지워집니다.", async () => {
+    try {
+      const batch = db.batch();
+      
+      // Reset player slots
+      const playersSnap = await db.collection("players").get();
+      for (let pDoc of playersSnap.docs) {
+        batch.update(pDoc.ref, {
+          active: false,
+          nickname: "",
+          classType: "",
+          solvedCorrectly: false,
+          solvedAt: null,
+          rank: 0,
+          lastGuessedInning: 0
+        });
+        
+        // delete guesses subcollection
+        const guessesSnap = await pDoc.ref.collection("guesses").get();
+        guessesSnap.forEach(gDoc => {
+          batch.delete(gDoc.ref);
+        });
+      }
+
+      // Reset game state to lobby status
+      const stateRef = db.collection("game").doc("state");
+      batch.update(stateRef, {
+        status: "waiting",
+        inning: 1,
+        stage: "top",
+        stageEndTime: null,
+        winningPlayer: null,
+        targetCode: generateTargetCode(),
+        problems: generateThreeProblems(),
+        solveCount: 0
+      });
+
+      await batch.commit();
+      
+      showCustomAlert("초기화 완료", "경기 포맷 및 초기화가 성공적으로 완료되었습니다!");
+      closeModal("modal-admin-dashboard");
+    } catch (err) {
+      showCustomAlert("초기화 실패", "초기화에 실패했습니다: " + err);
+    }
+  });
 });
 
 /* -------------------------------------------------------------
@@ -1453,6 +1570,50 @@ function showModal(modalId) {
 
 function closeModal(modalId) {
   document.getElementById(modalId).classList.remove("active");
+}
+
+// Custom Modal Dialog Helpers to replace browser prompts/alerts/confirms
+function showCustomAlert(title, message) {
+  const modalAlert = document.getElementById("modal-custom-alert");
+  if (!modalAlert) return;
+
+  document.getElementById("alert-title").innerText = title;
+  document.getElementById("alert-message").innerText = message;
+  showModal("modal-custom-alert");
+  
+  const btnClose = document.getElementById("btn-alert-close");
+  const newBtnClose = btnClose.cloneNode(true);
+  btnClose.parentNode.replaceChild(newBtnClose, btnClose);
+  
+  newBtnClose.addEventListener("click", () => {
+    closeModal("modal-custom-alert");
+  });
+}
+
+function showCustomConfirm(title, message, onConfirm) {
+  const modalConfirm = document.getElementById("modal-custom-confirm");
+  if (!modalConfirm) return;
+
+  document.getElementById("confirm-title").innerText = title;
+  document.getElementById("confirm-message").innerText = message;
+  showModal("modal-custom-confirm");
+  
+  const btnYes = document.getElementById("btn-confirm-yes");
+  const btnNo = document.getElementById("btn-confirm-no");
+  
+  const newBtnYes = btnYes.cloneNode(true);
+  const newBtnNo = btnNo.cloneNode(true);
+  btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+  btnNo.parentNode.replaceChild(newBtnNo, btnNo);
+  
+  newBtnYes.addEventListener("click", () => {
+    closeModal("modal-custom-confirm");
+    onConfirm();
+  });
+  
+  newBtnNo.addEventListener("click", () => {
+    closeModal("modal-custom-confirm");
+  });
 }
 
 // Global modal closer when clicking overlay
