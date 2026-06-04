@@ -619,54 +619,66 @@ function handleGameStateTransition() {
   }
 }
 
-// Sync and countdown timer
+// Sync and display timer from Firestore (No local countdown intervals)
 function startStageTimer() {
-  if (!gameState.stageEndTime) {
+  updateTimerUI();
+}
+
+function updateTimerUI() {
+  if (!gameState || typeof gameState.timeLeft === "undefined") {
     sbTimerText.innerText = "--:--";
     return;
   }
 
-  const updateTimer = () => {
-    const now = Date.now();
-    const end = gameState.stageEndTime.toMillis();
-    const diff = end - now;
-
-    if (diff <= 0) {
-      sbTimerText.innerText = "00:00";
-      clearInterval(localTimerInterval);
-      
-      // Auto advance: managed by admin client to avoid collision.
-      // Admin dashboard has timer monitoring
-      handleTimerExpiration();
-      return;
+  const secsTotal = gameState.timeLeft;
+  const mins = Math.floor(secsTotal / 60);
+  const secs = secsTotal % 60;
+  
+  sbTimerText.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  
+  // For ad stage visual timer in center
+  if (gameState.stage === "ad") {
+    const visualCounter = document.getElementById("ad-countdown-visual");
+    if (visualCounter) {
+      visualCounter.innerText = secsTotal.toString();
     }
-
-    const secsTotal = Math.floor(diff / 1000);
-    const mins = Math.floor(secsTotal / 60);
-    const secs = secsTotal % 60;
-    
-    sbTimerText.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    
-    // For ad stage visual timer in center
-    if (gameState.stage === "ad") {
-      const visualCounter = document.getElementById("ad-countdown-visual");
-      if (visualCounter) {
-        visualCounter.innerText = secsTotal.toString();
-      }
-    }
-  };
-
-  updateTimer();
-  localTimerInterval = setInterval(updateTimer, 1000);
+  }
 }
 
-// Logic triggered when timer reaches 0
-function handleTimerExpiration() {
-  // Check if I am the admin (admin dashboard active)
-  const isAdminSession = sessionStorage.getItem("adminAuth") === "true";
-  if (isAdminSession) {
-    // Auto transition to next state
-    autoAdvanceStage();
+// Centered Admin-only loop to decrement Firestore timeLeft
+let adminTimerInterval = null;
+
+function syncAdminTimerLoop() {
+  const isAdmin = sessionStorage.getItem("adminAuth") === "true";
+  
+  // If not admin or game not playing, clear the interval
+  if (!isAdmin || !gameState || gameState.status !== "playing") {
+    if (adminTimerInterval) {
+      clearInterval(adminTimerInterval);
+      adminTimerInterval = null;
+    }
+    return;
+  }
+  
+  // If admin is authenticated and playing, ensure ONE loop runs to decrement timeLeft
+  if (!adminTimerInterval) {
+    adminTimerInterval = setInterval(async () => {
+      if (!gameState || gameState.status !== "playing") return;
+      
+      const newTimeLeft = (gameState.timeLeft || 0) - 1;
+      
+      if (newTimeLeft <= 0) {
+        // Clear local timer before advancing to prevent multiple calls
+        clearInterval(adminTimerInterval);
+        adminTimerInterval = null;
+        await autoAdvanceStage();
+      } else {
+        // Update Firestore: this will sync all clients immediately
+        await db.collection("game").doc("state").update({
+          timeLeft: newTimeLeft
+        });
+      }
+    }, 1000);
   }
 }
 
@@ -676,19 +688,19 @@ async function autoAdvanceStage() {
   
   let nextStage = "top";
   let nextInning = gameState.inning;
-  let durationMs = 0;
+  let initialTimeLeft = 60;
   let status = "playing";
 
   if (gameState.stage === "top") {
     nextStage = "bottom";
-    durationMs = 120 * 1000; // 2 minutes
+    initialTimeLeft = 120;
   } else if (gameState.stage === "bottom") {
     nextStage = "ad";
-    durationMs = 10 * 1000; // 10 seconds
+    initialTimeLeft = 10;
   } else if (gameState.stage === "ad") {
     nextStage = "top";
     nextInning = gameState.inning + 1;
-    durationMs = 60 * 1000; // 1 minute
+    initialTimeLeft = 60;
     
     if (nextInning > 9) {
       status = "finished";
@@ -701,11 +713,10 @@ async function autoAdvanceStage() {
   if (status === "finished") {
     batch.update(stateRef, { status: "finished" });
   } else {
-    const endTimestamp = firebase.firestore.Timestamp.fromDate(new Date(Date.now() + durationMs));
     const updates = {
       stage: nextStage,
       inning: nextInning,
-      stageEndTime: endTimestamp
+      timeLeft: initialTimeLeft
     };
     
     // Generate new problems when returning to "top"
@@ -719,7 +730,8 @@ async function autoAdvanceStage() {
         batch.update(pDoc.ref, {
           solvedCorrectly: false,
           solvedAt: null,
-          rank: 0
+          rank: 0,
+          lastGuessedInning: 0
         });
       });
     }
