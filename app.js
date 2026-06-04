@@ -335,6 +335,7 @@ db.collection("players").onSnapshot(snapshot => {
       
       // Asynchronous state synchronization to avoid race condition on reload
       if (gameState && gameState.status === "playing") {
+        showScreen("game-screen");
         if (gameState.stage === "bottom") {
           setupBottomStage();
         } else if (gameState.stage === "top" && myPlayer.solvedCorrectly) {
@@ -527,6 +528,10 @@ function updateMyPlayerTag() {
 // Check session on load / slot registration
 function checkPlayerSession() {
   if (mySlotId) {
+    if (playersList.length === 0) {
+      // playersList has not loaded yet from Firestore, do not wipe!
+      return;
+    }
     const me = playersList.find(p => p.slotId === mySlotId);
     if (me && me.active) {
       myPlayer = me;
@@ -540,7 +545,7 @@ function checkPlayerSession() {
         lobbyStatusText.innerText = "라인업 등록 완료! 감독님이 게임을 시작할 때까지 대기해주세요.";
       }
     } else {
-      // Clear invalid local slot ID
+      // Clear invalid local slot ID (only if playersList has loaded and we are sure they are inactive)
       mySlotId = null;
       myPlayer = null;
       localStorage.removeItem("selectedSlotId");
@@ -625,7 +630,11 @@ function handleGameStateTransition() {
   // Adjust BG styling
   gameBgOverlay.className = `bg-${gameState.stage}`;
 
-  // Hide all panel templates
+  // Hide all panel templates using explicit display: none (Mutually Exclusive Display)
+  stageTopPanel.style.display = "none";
+  stageBottomPanel.style.display = "none";
+  stageAdPanel.style.display = "none";
+
   stageTopPanel.classList.remove("active");
   stageBottomPanel.classList.remove("active");
   stageAdPanel.classList.remove("active");
@@ -839,7 +848,15 @@ function setupTopStage() {
 
 // Click Submit math answers
 btnSubmitAnswers.addEventListener("click", async () => {
-  if (!myPlayer || !gameState) return;
+  if (!myPlayer) {
+    showCustomAlert("제출 오류", "선수 등록이 되어있지 않습니다. 로비에서 먼저 타자로 등록해주세요.");
+    return;
+  }
+  if (!gameState) return;
+
+  // Change UI immediately to "제출 완료 ⚾" and disable to prevent double submissions
+  btnSubmitAnswers.disabled = true;
+  btnSubmitAnswers.innerText = "제출 완료 ⚾";
 
   const a1 = parseInt(ans1.value);
   const a2 = parseInt(ans2.value);
@@ -848,6 +865,9 @@ btnSubmitAnswers.addEventListener("click", async () => {
   if (isNaN(a1) || isNaN(a2) || isNaN(a3)) {
     solveFeedback.innerText = "모든 정답 칸에 정수를 입력해주세요!";
     solveFeedback.className = "feedback-msg error";
+    // Restore button state
+    btnSubmitAnswers.disabled = false;
+    btnSubmitAnswers.innerText = "분석 결과 전송 (제출)";
     return;
   }
 
@@ -855,9 +875,6 @@ btnSubmitAnswers.addEventListener("click", async () => {
   
   if (a1 === correctAnswers[0] && a2 === correctAnswers[1] && a3 === correctAnswers[2]) {
     // Correct!
-    btnSubmitAnswers.disabled = true;
-    btnSubmitAnswers.innerText = "제출 완료 ⚾";
-
     solveFeedback.innerText = "분석 완료! 상대 투수의 구질 분석에 성공하여 출루했습니다.";
     solveFeedback.className = "feedback-msg success";
     
@@ -888,11 +905,17 @@ btnSubmitAnswers.addEventListener("click", async () => {
       
     } catch (err) {
       console.error("Error writing solved rank:", err);
+      // Restore button state on transaction failure
+      btnSubmitAnswers.disabled = false;
+      btnSubmitAnswers.innerText = "분석 결과 전송 (제출)";
     }
   } else {
     // Incorrect
     solveFeedback.innerText = "오답이 포함되어 있습니다. 투구 궤적을 다시 구해보세요!";
     solveFeedback.className = "feedback-msg error";
+    // Restore button state
+    btnSubmitAnswers.disabled = false;
+    btnSubmitAnswers.innerText = "분석 결과 전송 (제출)";
   }
 });
 
@@ -929,7 +952,10 @@ function setupBottomStage() {
   }
   guessActionBar.classList.add("hidden");
 
-  if (!myPlayer) return;
+  if (!myPlayer) {
+    guessLayoutContainer.innerHTML = `<div class="guess-no-perm">선수 등록이 되어 있지 않습니다. 로비에서 타자를 등록해 주세요.</div>`;
+    return;
+  }
 
   // Check if player has already submitted guess for the current inning
   if (myPlayer.lastGuessedInning === gameState.inning) {
@@ -1035,7 +1061,11 @@ function setupDigitBoxesJumping() {
 
 // Click Submit guesses
 document.getElementById("btn-submit-guess").addEventListener("click", async () => {
-  if (!myPlayer || !gameState) return;
+  if (!myPlayer) {
+    showCustomAlert("제출 오류", "선수 등록이 되어있지 않습니다. 로비에서 먼저 타자로 등록해주세요.");
+    return;
+  }
+  if (!gameState) return;
 
   const target = gameState.targetCode;
   const numSlots = guessLayoutContainer.querySelectorAll(".guess-slot-card").length;
@@ -1141,6 +1171,7 @@ document.getElementById("btn-submit-guess").addEventListener("click", async () =
  * ------------------------------------------------------------- */
 
 function setupAdStage() {
+  stageAdPanel.style.display = "flex";
   stageAdPanel.classList.add("active");
   homerunHintShown = false; // Reset for next inning
 }
