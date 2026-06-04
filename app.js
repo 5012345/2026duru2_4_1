@@ -265,7 +265,7 @@ async function ensureDatabaseInitialized() {
         status: "waiting",
         inning: 1,
         stage: "top",
-        stageEndTime: null,
+        timeLeft: 60,
         winningPlayer: null,
         targetCode: generateTargetCode(),
         problems: generateThreeProblems(),
@@ -370,6 +370,10 @@ db.collection("game").doc("state").onSnapshot(doc => {
     // If only timer or winning player changed
     checkVictoryState();
   }
+
+  // Always update timer UI and check/sync the admin timer loop
+  updateTimerUI();
+  syncAdminTimerLoop();
 });
 
 /* -------------------------------------------------------------
@@ -1289,9 +1293,10 @@ async function openAdminDashboard() {
   const admCodeText = document.getElementById("adm-code-text");
   const btnAdmRevealCode = document.getElementById("btn-adm-reveal-code");
   if (admCodeText && btnAdmRevealCode) {
-    admCodeText.innerText = "****";
+    admCodeText.innerText = "";
     admCodeText.classList.add("hidden");
-    btnAdmRevealCode.innerText = "정답 비밀번호 확인하기";
+    admCodeText.style.opacity = "0";
+    btnAdmRevealCode.innerText = "투수 암호 확인 👁️";
   }
 
   const admErrorMsg = document.getElementById("adm-error-msg");
@@ -1303,7 +1308,7 @@ async function openAdminDashboard() {
   if (gameState) {
     admInning.value = gameState.inning.toString();
     admStage.value = gameState.stage;
-    admTargetCode.value = gameState.targetCode;
+    admTargetCode.value = ""; // Clear password input box to prevent leakage
   }
   
   updateAdminPlayersTable();
@@ -1398,21 +1403,91 @@ function updateAdminPlayersTable() {
   });
 }
 
-// Target code secret reveal toggle bindings
+// Target code secret reveal toggle and press-and-hold bindings
 const btnAdmRevealCode = document.getElementById("btn-adm-reveal-code");
 const admCodeText = document.getElementById("adm-code-text");
 
-if (btnAdmRevealCode) {
-  btnAdmRevealCode.addEventListener("click", () => {
-    if (admCodeText.classList.contains("hidden")) {
-      admCodeText.innerText = gameState ? gameState.targetCode : "****";
-      admCodeText.classList.remove("hidden");
-      btnAdmRevealCode.innerText = "비밀번호 숨기기";
+let pressStartTime = 0;
+let isHolding = false;
+let isToggledOn = false;
+
+function showAdminCode() {
+  if (!gameState) return;
+  admCodeText.innerText = gameState.targetCode;
+  admCodeText.classList.remove("hidden");
+  admCodeText.style.opacity = "1";
+}
+
+function hideAdminCode() {
+  admCodeText.innerText = "";
+  admCodeText.classList.add("hidden");
+  admCodeText.style.opacity = "0";
+}
+
+function handlePressStart() {
+  pressStartTime = Date.now();
+  isHolding = true;
+  showAdminCode();
+}
+
+function handlePressEnd() {
+  const pressDuration = Date.now() - pressStartTime;
+  isHolding = false;
+  
+  if (pressDuration > 250) {
+    // It was a long press/hold, so hide on release
+    hideAdminCode();
+    isToggledOn = false;
+  } else {
+    // It was a short click, toggle the state
+    if (isToggledOn) {
+      hideAdminCode();
+      isToggledOn = false;
     } else {
-      admCodeText.innerText = "****";
-      admCodeText.classList.add("hidden");
-      btnAdmRevealCode.innerText = "정답 비밀번호 확인하기";
+      showAdminCode();
+      isToggledOn = true;
     }
+  }
+}
+
+if (btnAdmRevealCode) {
+  // Prevent default context menu to ensure hold works smoothly on touchscreens
+  btnAdmRevealCode.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  // Mouse event listeners
+  btnAdmRevealCode.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    handlePressStart();
+  });
+
+  btnAdmRevealCode.addEventListener("mouseup", (e) => {
+    e.preventDefault();
+    handlePressEnd();
+  });
+
+  btnAdmRevealCode.addEventListener("mouseleave", (e) => {
+    if (isHolding) {
+      isHolding = false;
+      hideAdminCode();
+      isToggledOn = false;
+    }
+  });
+
+  // Touch event listeners for mobile/tablet chrome
+  btnAdmRevealCode.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    handlePressStart();
+  });
+
+  btnAdmRevealCode.addEventListener("touchend", (e) => {
+    e.preventDefault();
+    handlePressEnd();
+  });
+
+  btnAdmRevealCode.addEventListener("touchcancel", (e) => {
+    isHolding = false;
+    hideAdminCode();
+    isToggledOn = false;
   });
 }
 
@@ -1428,39 +1503,41 @@ btnAdmUpdateState.addEventListener("click", async () => {
   if (!gameState) return;
   const inningVal = parseInt(admInning.value);
   const stageVal = admStage.value;
-  const codeVal = admTargetCode.value.trim();
+  let codeVal = admTargetCode.value.trim();
   const admErrorMsg = document.getElementById("adm-error-msg");
 
-  if (codeVal.length !== 4 || isNaN(parseInt(codeVal))) {
-    if (admErrorMsg) {
-      admErrorMsg.innerText = "비밀번호는 4자리 숫자여야 합니다.";
-      admErrorMsg.className = "feedback-msg error";
+  if (codeVal === "") {
+    codeVal = gameState.targetCode; // Default to existing targetCode if empty
+  } else {
+    if (codeVal.length !== 4 || isNaN(parseInt(codeVal))) {
+      if (admErrorMsg) {
+        admErrorMsg.innerText = "비밀번호는 4자리 숫자여야 합니다.";
+        admErrorMsg.className = "feedback-msg error";
+      }
+      return;
     }
-    return;
-  }
-  
-  const uniqueCode = new Set(codeVal);
-  if (uniqueCode.size < 4) {
-    if (admErrorMsg) {
-      admErrorMsg.innerText = "비밀번호 숫자는 서로 달라야 합니다 (중복 불가).";
-      admErrorMsg.className = "feedback-msg error";
+    
+    const uniqueCode = new Set(codeVal);
+    if (uniqueCode.size < 4) {
+      if (admErrorMsg) {
+        admErrorMsg.innerText = "비밀번호 숫자는 서로 달라야 합니다 (중복 불가).";
+        admErrorMsg.className = "feedback-msg error";
+      }
+      return;
     }
-    return;
   }
 
   try {
-    let duration = 60 * 1000; // top is 1m
-    if (stageVal === "bottom") duration = 120 * 1000; // bottom is 2m
-    if (stageVal === "ad") duration = 10 * 1000; // ad is 10s
-
-    const endTimestamp = firebase.firestore.Timestamp.fromDate(new Date(Date.now() + duration));
+    let initialTimeLeft = 60;
+    if (stageVal === "bottom") initialTimeLeft = 120;
+    if (stageVal === "ad") initialTimeLeft = 10;
     
     const updates = {
       status: "playing",
       inning: inningVal,
       stage: stageVal,
       targetCode: codeVal,
-      stageEndTime: endTimestamp
+      timeLeft: initialTimeLeft
     };
 
     // If stage becomes "top", generate questions and reset players solved status
@@ -1509,7 +1586,7 @@ btnAdmForceNext.addEventListener("click", () => {
       if (gameState) {
         admInning.value = gameState.inning.toString();
         admStage.value = gameState.stage;
-        admTargetCode.value = gameState.targetCode;
+        admTargetCode.value = ""; // Keep hidden
       }
       if (admErrorMsg) {
         admErrorMsg.innerText = "스테이지가 변경되었습니다.";
@@ -1555,7 +1632,7 @@ btnAdmResetAll.addEventListener("click", () => {
         status: "waiting",
         inning: 1,
         stage: "top",
-        stageEndTime: null,
+        timeLeft: 60,
         winningPlayer: null,
         targetCode: generateTargetCode(),
         problems: generateThreeProblems(),

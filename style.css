@@ -605,10 +605,11 @@ body {
 
 /* TOP [초] Math Solving Panel styles */
 .math-problems-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px;
   margin-bottom: 30px;
+  width: 100%;
 }
 
 .problem-card {
@@ -622,15 +623,7 @@ body {
   justify-content: space-between;
   gap: 30px;
   transition: all 0.3s;
-}
-
-@media (max-width: 768px) {
-  .problem-card {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 20px;
-    gap: 15px;
-  }
+  width: 100%;
 }
 
 .problem-card:hover {
@@ -645,11 +638,40 @@ body {
   flex-grow: 1;
 }
 
-@media (max-width: 768px) {
+/* Tablet & Mobile responsive optimization (Chromebook, iPad, phones) */
+@media (max-width: 1024px) {
+  .problem-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 20px !important;
+    gap: 15px !important;
+  }
+
   .problem-left-wrap {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    width: 100%;
+  }
+
+  .problem-question {
+    font-size: 1.1rem !important;
+    line-height: 1.6;
+    word-break: keep-all;
+  }
+
+  .problem-input-wrap {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    margin-top: 5px;
     gap: 10px;
+  }
+
+  .problem-input-wrap input {
+    width: 100% !important;
+    max-width: 240px;
+    font-size: 1rem !important;
+    padding: 10px 14px !important;
   }
 }
 
@@ -1235,21 +1257,49 @@ body {
   gap: 12px;
   background: rgba(0, 0, 0, 0.4);
   padding: 5px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid var(--border-glass);
 }
 
+.btn-dark {
+  background: rgba(30, 41, 59, 0.85);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.85rem;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn-dark:hover {
+  background: rgba(30, 41, 59, 1);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-dark:active {
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--warning-color);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
 #adm-code-text {
-  font-size: 1.15rem;
-  letter-spacing: 2px;
+  font-size: 1.25rem;
+  letter-spacing: 3px;
   color: var(--warning-color);
   font-weight: 700;
-  min-width: 45px;
+  min-width: 55px;
   text-align: center;
+  font-family: 'Orbitron', sans-serif;
+  text-shadow: 0 0 10px rgba(255, 251, 20, 0.6);
+  opacity: 1;
+  transition: opacity 0.2s ease;
 }
 
 #adm-code-text.hidden {
-  color: rgba(255, 255, 255, 0.25);
+  display: none !important;
 }
 
 /* Custom modal content styles */
