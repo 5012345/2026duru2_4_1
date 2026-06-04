@@ -1610,13 +1610,12 @@ btnAdmRandomCode.addEventListener("click", () => {
 
 btnAdmUpdateState.addEventListener("click", async () => {
   if (!gameState) return;
-  const inningVal = parseInt(admInning.value);
-  const stageVal = admStage.value;
+  
   let codeVal = admTargetCode.value.trim();
   const admErrorMsg = document.getElementById("adm-error-msg");
 
   if (codeVal === "") {
-    codeVal = gameState.targetCode; // Default to existing targetCode if empty
+    codeVal = generateTargetCode(); // Auto-generate if empty
   } else {
     if (codeVal.length !== 4 || isNaN(parseInt(codeVal))) {
       if (admErrorMsg) {
@@ -1637,40 +1636,41 @@ btnAdmUpdateState.addEventListener("click", async () => {
   }
 
   try {
-    let initialTimeLeft = 60;
-    if (stageVal === "bottom") initialTimeLeft = 120;
-    if (stageVal === "ad") initialTimeLeft = 10;
+    const initialTimeLeft = 60; // 1회초 is 60 seconds
     
     const updates = {
       status: "playing",
-      inning: inningVal,
-      stage: stageVal,
+      inning: 1,
+      stage: "top",
       targetCode: codeVal,
-      timeLeft: initialTimeLeft
+      timeLeft: initialTimeLeft,
+      problems: generateThreeProblems(),
+      solveCount: 0
     };
 
-    // If stage becomes "top", generate questions and reset players solved status
     const batch = db.batch();
-    if (stageVal === "top") {
-      updates.problems = generateThreeProblems();
-      updates.solveCount = 0;
-      
-      const playerSnap = await db.collection("players").get();
-      playerSnap.forEach(pDoc => {
-        batch.update(pDoc.ref, {
-          solvedCorrectly: false,
-          solvedAt: null,
-          rank: 0,
-          lastGuessedInning: 0
-        });
+    
+    // Clear solved states for all players
+    const playerSnap = await db.collection("players").get();
+    playerSnap.forEach(pDoc => {
+      batch.update(pDoc.ref, {
+        solvedCorrectly: false,
+        solvedAt: null,
+        rank: 0,
+        lastGuessedInning: 0
       });
-    }
+    });
 
     batch.update(db.collection("game").doc("state"), updates);
     await batch.commit();
     
+    // Update admin selects visually to reflect 1회초
+    admInning.value = "1";
+    admStage.value = "top";
+    admTargetCode.value = ""; // Keep hidden
+
     if (admErrorMsg) {
-      admErrorMsg.innerText = "설정이 동기화되었습니다.";
+      admErrorMsg.innerText = "경기가 성공적으로 시작되었습니다! (1회초)";
       admErrorMsg.className = "feedback-msg success";
     }
 

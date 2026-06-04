@@ -224,7 +224,7 @@
             <h3>경기 진행 현황</h3>
             <div class="admin-state-row">
               <label>현재 이닝:</label>
-              <select id="adm-inning">
+              <select id="adm-inning" disabled style="background: rgba(0, 0, 0, 0.2); color: rgba(255, 255, 255, 0.5); cursor: not-allowed;">
                 <option value="1">1이닝</option>
                 <option value="2">2이닝</option>
                 <option value="3">3이닝</option>
@@ -238,7 +238,7 @@
             </div>
             <div class="admin-state-row">
               <label>스테이지:</label>
-              <select id="adm-stage">
+              <select id="adm-stage" disabled style="background: rgba(0, 0, 0, 0.2); color: rgba(255, 255, 255, 0.5); cursor: not-allowed;">
                 <option value="top">초 (문제풀이)</option>
                 <option value="bottom">말 (비밀번호 추리)</option>
                 <option value="ad">광고시간 (정비)</option>
@@ -258,7 +258,7 @@
               </div>
             </div>
             <div class="admin-btn-group">
-              <button id="btn-adm-update-state" class="btn btn-primary">상태 변경 저장</button>
+              <button id="btn-adm-update-state" class="btn btn-primary">⚾ 경기 시작</button>
               <button id="btn-adm-force-next" class="btn btn-warning">➡️ 다음 스테이지 강제 이동</button>
             </div>
             <div id="adm-error-msg" class="feedback-msg" style="margin-top: 15px; font-size: 0.9rem; min-height: 20px;"></div>
