@@ -74,10 +74,10 @@ const victoryOverlay = document.getElementById("victory-overlay");
 const winnerInfoLabel = document.getElementById("winner-info");
 
 // Admin Elements
-const btnAdminLoginTrigger = document.getElementById("btn-admin-login-trigger");
-const btnAdminAuth = document.getElementById("btn-admin-auth");
-const inputAdminPassword = document.getElementById("admin-password");
-const adminAuthError = document.getElementById("admin-auth-error");
+const inputLobbyAdminPassword = document.getElementById("lobby-admin-password");
+const btnLobbyAdminAuth = document.getElementById("btn-lobby-admin-auth");
+const lobbyAdminError = document.getElementById("lobby-admin-error");
+const btnLobbyAdminDashboard = document.getElementById("btn-lobby-admin-dashboard");
 const admInning = document.getElementById("adm-inning");
 const admStage = document.getElementById("adm-stage");
 const admTargetCode = document.getElementById("adm-target-code");
@@ -1208,27 +1208,41 @@ function fireworksLoop() {
  * Session checking with passcode "2525" and forced override actions
  * ------------------------------------------------------------- */
 
-btnAdminLoginTrigger.addEventListener("click", () => {
+// Function to update the Admin UI fields in the lobby screen
+function checkAdminSessionUI() {
   const isAdmin = sessionStorage.getItem("adminAuth") === "true";
+  const loginFields = document.getElementById("admin-login-fields");
+  const loggedInFields = document.getElementById("admin-logged-in-fields");
+  
   if (isAdmin) {
-    openAdminDashboard();
+    if (loginFields) loginFields.classList.add("hidden");
+    if (loggedInFields) loggedInFields.classList.remove("hidden");
   } else {
-    inputAdminPassword.value = "";
-    adminAuthError.innerText = "";
-    showModal("modal-admin-login");
+    if (loginFields) loginFields.classList.remove("hidden");
+    if (loggedInFields) loggedInFields.classList.add("hidden");
   }
-});
+}
 
-btnAdminAuth.addEventListener("click", () => {
-  const pw = inputAdminPassword.value.trim();
-  if (pw === ADMIN_PASSWORD) {
-    sessionStorage.setItem("adminAuth", "true");
-    closeModal("modal-admin-login");
+if (btnLobbyAdminAuth) {
+  btnLobbyAdminAuth.addEventListener("click", () => {
+    const pw = inputLobbyAdminPassword.value.trim();
+    if (pw === ADMIN_PASSWORD) {
+      sessionStorage.setItem("adminAuth", "true");
+      if (lobbyAdminError) lobbyAdminError.innerText = "";
+      inputLobbyAdminPassword.value = "";
+      checkAdminSessionUI();
+      openAdminDashboard();
+    } else {
+      if (lobbyAdminError) lobbyAdminError.innerText = "비밀번호 오류";
+    }
+  });
+}
+
+if (btnLobbyAdminDashboard) {
+  btnLobbyAdminDashboard.addEventListener("click", () => {
     openAdminDashboard();
-  } else {
-    adminAuthError.innerText = "비밀번호가 일치하지 않습니다.";
-  }
-});
+  });
+}
 
 async function openAdminDashboard() {
   showModal("modal-admin-dashboard");
@@ -1453,5 +1467,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   // Let players snapshot listener execute first, then check session
   setTimeout(() => {
     checkPlayerSession();
+    checkAdminSessionUI();
   }, 1000);
 });

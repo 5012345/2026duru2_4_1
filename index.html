@@ -82,7 +82,18 @@
           <span class="status-dot green"></span>
           <span id="lobby-status-text">경기장 준비 중...</span>
         </div>
-        <button id="btn-admin-login-trigger">*</button>
+        <div id="lobby-admin-panel" class="lobby-admin-panel">
+          <div class="admin-login-fields" id="admin-login-fields">
+            <span class="admin-label">⚾ 감독 로그인:</span>
+            <input type="password" id="lobby-admin-password" placeholder="비밀번호" class="admin-input-pw">
+            <button id="btn-lobby-admin-auth" class="btn btn-secondary btn-small">인증</button>
+          </div>
+          <div class="admin-logged-in-fields hidden" id="admin-logged-in-fields">
+            <span class="admin-label" style="color: var(--success-color);">⚾ 감독 로그인됨</span>
+            <button id="btn-lobby-admin-dashboard" class="btn btn-warning btn-small">대시보드 열기</button>
+          </div>
+          <div id="lobby-admin-error" class="error-msg-inline"></div>
+        </div>
       </footer>
     </div>
 
@@ -249,23 +260,7 @@
     </div>
   </div>
 
-  <!-- ADMIN LOGIN MODAL -->
-  <div id="modal-admin-login" class="modal-overlay">
-    <div class="modal-content admin-auth-content">
-      <div class="modal-header">
-        <h2>감독용 관리자 인증</h2>
-        <button class="modal-close" onclick="closeModal('modal-admin-login')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="admin-password">비밀번호</label>
-          <input type="password" id="admin-password" placeholder="비밀번호 입력">
-        </div>
-        <button id="btn-admin-auth" class="btn btn-primary btn-full">인증하기</button>
-        <div id="admin-auth-error" class="error-msg"></div>
-      </div>
-    </div>
-  </div>
+  <!-- (Admin authentication modal removed as it is now embedded inline in the lobby footer) -->
 
   <!-- ADMIN DASHBOARD MODAL -->
   <div id="modal-admin-dashboard" class="modal-overlay">

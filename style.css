@@ -5,17 +5,17 @@
 
 /* Variables & Base Styles */
 :root {
-  --primary-color: #1a73e8;
-  --secondary-color: #f1f3f4;
-  --success-color: #00e676;
-  --warning-color: #ff9100;
-  --danger-color: #ff1744;
+  --primary-color: #1b4d3e;      /* Stadium Dark Green */
+  --secondary-color: #ffffff;    /* White */
+  --success-color: #39ff14;      /* Neon Green */
+  --warning-color: #fffb14;      /* Neon Yellow */
+  --danger-color: #ff1744;       /* Bright Red */
   
-  --bg-dark: #0b0f19;
-  --bg-glass: rgba(15, 23, 42, 0.75);
-  --border-glass: rgba(255, 255, 255, 0.1);
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+  --bg-dark: #07110e;            /* Deep Green Black */
+  --bg-glass: rgba(15, 30, 24, 0.85); /* Deep green glassmorphism */
+  --border-glass: rgba(255, 255, 255, 0.12);
+  --text-primary: #ffffff;
+  --text-secondary: #a3b8b0;     /* Muted sage grey */
   
   /* Baseball Themes */
   --grass-green: #1b4d3e;
@@ -55,7 +55,8 @@ body {
 }
 
 .bg-waiting {
-  background: radial-gradient(circle at center, #111827 0%, #030712 100%);
+  background-image: linear-gradient(rgba(11, 15, 25, 0.8), rgba(11, 15, 25, 0.8)), url('baseball_field.png');
+  filter: brightness(0.95);
 }
 
 .bg-top {
@@ -156,7 +157,8 @@ body {
 
 .slots-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(4, 1fr);
   gap: 15px;
 }
 
@@ -303,9 +305,9 @@ body {
 }
 
 .class-card.selected {
-  background: rgba(26, 115, 232, 0.1);
-  border-color: var(--primary-color);
-  box-shadow: inset 0 0 10px rgba(26, 115, 232, 0.15);
+  background: rgba(27, 77, 62, 0.2);
+  border-color: var(--warning-color);
+  box-shadow: inset 0 0 10px rgba(27, 77, 62, 0.3);
 }
 
 .class-icon {
@@ -358,9 +360,11 @@ body {
 .btn-primary {
   background: var(--primary-color);
   color: white;
+  border: 1px solid var(--border-glass);
 }
 .btn-primary:hover {
-  background: #1557b0;
+  background: #113025;
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.15);
 }
 .btn-primary:disabled {
   background: rgba(255, 255, 255, 0.1);
@@ -425,6 +429,8 @@ body {
   margin-top: 40px;
   border-top: 1px solid var(--border-glass);
   padding-top: 20px;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .status-indicator {
@@ -443,17 +449,45 @@ body {
 .status-dot.green { background: var(--success-color); box-shadow: 0 0 8px var(--success-color); }
 .status-dot.orange { background: var(--warning-color); box-shadow: 0 0 8px var(--warning-color); }
 
-#btn-admin-login-trigger {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.15);
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 5px;
-  transition: color 0.3s;
+.lobby-admin-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
 }
-#btn-admin-login-trigger:hover {
+
+.admin-login-fields, .admin-logged-in-fields {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-label {
+  font-size: 0.85rem;
+  font-weight: 700;
   color: var(--text-secondary);
+}
+
+.admin-input-pw {
+  width: 100px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-glass);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.admin-input-pw:focus {
+  border-color: var(--warning-color);
+}
+
+.error-msg-inline {
+  font-size: 0.75rem;
+  color: var(--danger-color);
+  min-height: 14px;
 }
 
 /* GAME SCREEN STYLE */
