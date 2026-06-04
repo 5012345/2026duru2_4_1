@@ -1140,6 +1140,7 @@ body {
 
 /* VICTORY OVERLAY */
 .victory-overlay {
+  display: none; /* hidden by default */
   position: fixed;
   top: 0;
   left: 0;
@@ -1147,10 +1148,13 @@ body {
   height: 100vh;
   background: rgba(3, 7, 18, 0.95);
   z-index: 2000;
-  display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+}
+
+.victory-overlay.active {
+  display: flex;
 }
 
 #fireworks-canvas {
@@ -1178,6 +1182,8 @@ body {
   max-width: 250px;
   height: auto;
   object-fit: contain;
+  position: relative;
+  z-index: 10;
   /* Diagonal entry animation */
   animation: slideDiagonal 1s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }
@@ -1248,7 +1254,7 @@ body {
 
 @keyframes slideDiagonal {
   0% {
-    transform: translate(-100px, 100px) rotate(-15deg);
+    transform: translate(-100vw, 100vh) rotate(-30deg);
     opacity: 0;
   }
   100% {

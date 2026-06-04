@@ -251,7 +251,7 @@ function getResultString(res) {
   return `${res.a}a ${res.b}b ${res.c}c`;
 }
 
-function generateWeakHint(targetCode) {
+function generateWeakHint(targetCode, existingHints = []) {
   if (!targetCode || targetCode.length < 4) return "";
   
   const digits = targetCode.split("").map(Number);
@@ -261,14 +261,47 @@ function generateWeakHint(targetCode) {
   const max = Math.max(...digits);
   const min = Math.min(...digits);
   
-  const hintType = (gameState && gameState.inning ? gameState.inning : 1) % 3;
-  if (hintType === 0) {
-    return `투수 암호의 4자리 숫자의 합은 ${sum}입니다.`;
-  } else if (hintType === 1) {
-    return `투수 암호에 포함된 짝수의 개수는 ${evens}개입니다.`;
-  } else {
-    return `투수 암호의 가장 큰 숫자와 가장 작은 숫자의 차이는 ${max - min}입니다.`;
+  const pool = [
+    `투수 암호의 4자리 숫자의 합은 ${sum}입니다.`,
+    `투수 암호에 포함된 짝수의 개수는 ${evens}개입니다.`,
+    `투수 암호의 가장 큰 숫자와 가장 작은 숫자의 차이는 ${max - min}입니다.`,
+    `투수 암호의 첫 번째 숫자와 네 번째 숫자의 합은 ${digits[0] + digits[3]}입니다.`,
+    `투수 암호의 두 번째 숫자와 세 번째 숫자의 합은 ${digits[1] + digits[2]}입니다.`,
+    `투수 암호의 첫 번째 숫자는 ${digits[0] % 2 === 0 ? '짝수' : '홀수'}입니다.`,
+    `투수 암호의 네 번째 숫자는 ${digits[3] % 2 === 0 ? '짝수' : '홀수'}입니다.`,
+    `투수 암호에 포함된 홀수의 개수는 ${odds}개입니다.`,
+    `투수 암호의 모든 숫자의 합은 ${sum % 2 === 0 ? '짝수' : '홀수'}입니다.`
+  ];
+  
+  // Use a while loop to check and prevent duplicate hints
+  let chosenHint = "";
+  let attempts = 0;
+  const maxAttempts = 200;
+  
+  const unusedHints = pool.filter(h => !existingHints.includes(h));
+  if (unusedHints.length === 0) {
+    // Fallback: If all hints have been used, pick a random one
+    const randIdx = Math.floor(Math.random() * pool.length);
+    return pool[randIdx];
   }
+  
+  while (attempts < maxAttempts) {
+    const randIdx = Math.floor(Math.random() * pool.length);
+    const candidate = pool[randIdx];
+    if (!existingHints.includes(candidate)) {
+      chosenHint = candidate;
+      break;
+    }
+    attempts++;
+  }
+  
+  if (!chosenHint) {
+    // Safety fallback
+    const randIdx = Math.floor(Math.random() * unusedHints.length);
+    chosenHint = unusedHints[randIdx];
+  }
+  
+  return chosenHint;
 }
 
 /* -------------------------------------------------------------
@@ -313,7 +346,8 @@ async function ensureDatabaseInitialized() {
           solvedCorrectly: false,
           solvedAt: null,
           rank: 0,
-          lastGuessedInning: 0
+          lastGuessedInning: 0,
+          hintHistory: []
         });
       }
     }
@@ -521,7 +555,8 @@ btnJoinGame.addEventListener("click", async () => {
         solvedCorrectly: false,
         solvedAt: null,
         rank: 0,
-        lastGuessedInning: 0
+        lastGuessedInning: 0,
+        hintHistory: []
       });
     });
 
@@ -689,6 +724,10 @@ function startStageTimer() {
 }
 
 function updateTimerUI() {
+  if (gameState && gameState.status === "finished") {
+    sbTimerText.innerText = "00:00";
+    return;
+  }
   if (!gameState || typeof gameState.timeLeft === "undefined") {
     sbTimerText.innerText = "--:--";
     return;
@@ -913,7 +952,8 @@ btnSubmitAnswers.addEventListener("click", async () => {
   
   if (a1 === correctAnswers[0] && a2 === correctAnswers[1] && a3 === correctAnswers[2]) {
     // Correct!
-    const hint = generateWeakHint(gameState.targetCode);
+    const existing = (myPlayer && myPlayer.hintHistory) ? myPlayer.hintHistory : [];
+    const hint = generateWeakHint(gameState.targetCode, existing);
     solveFeedback.innerText = "분석 완료! 상대 투수의 구질 분석에 성공하여 출루했습니다.";
     solveFeedback.className = "feedback-msg success";
     
@@ -934,7 +974,8 @@ btnSubmitAnswers.addEventListener("click", async () => {
         transaction.update(playerRef, {
           solvedCorrectly: true,
           solvedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          rank: newRank
+          rank: newRank,
+          hintHistory: firebase.firestore.FieldValue.arrayUnion(hint)
         });
         
         transaction.update(stateRef, {
@@ -974,6 +1015,14 @@ function markTopStageSolved() {
   ans3.disabled = true;
   btnSubmitAnswers.disabled = true;
   btnSubmitAnswers.innerText = "제출 완료 ⚾";
+  
+  // Animation retrigger
+  const successBadge = document.querySelector(".feedback-msg.success");
+  if (successBadge) {
+      successBadge.style.animation = "none";
+      void successBadge.offsetWidth;
+      successBadge.style.animation = null;
+  }
 }
 
 /* -------------------------------------------------------------
@@ -1003,8 +1052,7 @@ async function setupBottomStage() {
   const bottomHintContainer = document.getElementById("bottom-hint-container");
   if (bottomHintContainer) {
     if (myPlayer && myPlayer.solvedCorrectly) {
-      const hint = generateWeakHint(gameState.targetCode);
-      bottomHintContainer.innerHTML = `<span class="math-hint-span">💡 투수 암호 힌트: ${hint}</span>`;
+      bottomHintContainer.innerHTML = `<span class="math-hint-span">💡 힌트가 기록지에 입력되었습니다. 우측 상단의 [기록지 열람] 버튼을 눌러 확인하세요. ⚾</span>`;
       bottomHintContainer.style.display = "block";
     } else {
       bottomHintContainer.style.display = "none";
@@ -1044,15 +1092,37 @@ async function setupBottomStage() {
   }
 
   // 3. 홈런형 타자 능력 구현: 3, 4이닝에 추가 힌트 팝업 제공
-  if (myPlayer.classType === "홈런형" && myPlayer.solvedCorrectly && !homerunHintShown) {
+  if (myPlayer.classType === "홈런형" && myPlayer.solvedCorrectly) {
     if (gameState.inning === 3 || gameState.inning === 4) {
       const targetCode = gameState.targetCode;
       if (targetCode && targetCode.length >= 2) {
-        homerunHintShown = true;
         const hintDigit = targetCode[gameState.inning - 3];
-        setTimeout(() => {
-          showCustomAlert("🔥 홈런형 타자 특별 힌트 🔥", `상대 투수의 4자리 암호에 숫자 '${hintDigit}'가 포함되어 있습니다!`);
-        }, 500);
+        const homerunHintText = `[홈런형 타자 특별 힌트] 상대 투수의 4자리 암호에 숫자 '${hintDigit}'가 포함되어 있습니다!`;
+        const existingHints = myPlayer.hintHistory || [];
+        if (!existingHints.includes(homerunHintText)) {
+          try {
+            const playerRef = db.collection("players").doc(mySlotId);
+            const hintRef = db.collection("players").doc(mySlotId).collection("hints").doc(`inning_${gameState.inning}_homerun`);
+            
+            const batch = db.batch();
+            batch.update(playerRef, {
+              hintHistory: firebase.firestore.FieldValue.arrayUnion(homerunHintText)
+            });
+            batch.set(hintRef, {
+              inning: gameState.inning,
+              stage: "말",
+              hint: homerunHintText,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            await batch.commit();
+            
+            setTimeout(() => {
+              showCustomAlert("🔥 홈런형 타자 특별 힌트 🔥", `상대 투수의 4자리 암호에 숫자 '${hintDigit}'가 포함되어 있습니다!`);
+            }, 500);
+          } catch (err) {
+            console.error("Error updating homerun hint:", err);
+          }
+        }
       }
     }
   }
@@ -1266,6 +1336,7 @@ function bindSlotSubmitButtons(slotCount) {
         }
 
         if (isCorrect) {
+          triggerVictory(mySlotId, myPlayer.nickname ? `${myPlayer.nickname} (${myPlayer.slotName})` : "타자");
           await db.collection("game").doc("state").update({
             status: "finished",
             winningPlayer: mySlotId
@@ -1366,7 +1437,14 @@ document.getElementById("btn-view-records").addEventListener("click", async () =
       pastHints.push(doc.data());
     });
     
-    pastHints.sort((a, b) => a.inning - b.inning);
+    pastHints.sort((a, b) => {
+      if (a.inning !== b.inning) {
+        return a.inning - b.inning;
+      }
+      const timeA = a.timestamp ? (a.timestamp.seconds || a.timestamp.toMillis() || 0) : 0;
+      const timeB = b.timestamp ? (b.timestamp.seconds || b.timestamp.toMillis() || 0) : 0;
+      return timeA - timeB;
+    });
 
     hintsList.innerHTML = "";
     if (pastHints.length === 0) {
@@ -1375,8 +1453,9 @@ document.getElementById("btn-view-records").addEventListener("click", async () =
       pastHints.forEach(data => {
         const li = document.createElement("li");
         li.className = "record-list-item";
+        const stageSuffix = data.stage || (data.hint.includes("홈런형") ? "말" : "초");
         li.innerHTML = `
-          <span class="record-list-item-inning">${data.inning}회 초</span>
+          <span class="record-list-item-inning">${data.inning}회 ${stageSuffix}</span>
           <span class="record-list-item-hint">${data.hint}</span>
         `;
         hintsList.appendChild(li);
@@ -1400,14 +1479,44 @@ const canvas = document.getElementById("fireworks-canvas");
 const ctx = canvas.getContext("2d");
 let particles = [];
 
+function triggerVictory(winnerSlotId, winnerName) {
+  // Stop all local countdowns and timers immediately
+  if (localTimerInterval) { clearInterval(localTimerInterval); localTimerInterval = null; }
+  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  if (adminTimerInterval) { clearInterval(adminTimerInterval); adminTimerInterval = null; }
+  sbTimerText.innerText = "00:00";
+  
+  const winner = playersList.find(p => p.slotId === winnerSlotId);
+  const slotName = winner ? winner.slotName : "";
+  const name = winnerName || (winner ? winner.nickname : "타자");
+  const displayName = slotName ? `${name} (${slotName})` : name;
+  
+  if (winnerInfoLabel) {
+    winnerInfoLabel.innerText = `우승 타자: ${displayName}`;
+  }
+  
+  const msgEl = document.querySelector(".victory-message");
+  if (msgEl) {
+    msgEl.innerHTML = "축하합니다! 이번 경기에서 승리하셨습니다.<br>승리의 기쁨을 선생님께 찾아가 알리세요!";
+  }
+  
+  // Force retriggering of cheerleader diagonal slide animation
+  const cheerleader = document.querySelector(".cheerleader-image");
+  if (cheerleader) {
+    cheerleader.style.animation = "none";
+    cheerleader.offsetHeight; // trigger reflow
+    cheerleader.style.animation = "slideDiagonal 1.2s cubic-bezier(0.19, 1, 0.22, 1) forwards";
+  }
+  
+  showModal("victory-overlay");
+  startFireworks();
+}
+
 function checkVictoryState() {
   if (gameState && gameState.status === "finished" && gameState.winningPlayer) {
     const winner = playersList.find(p => p.slotId === gameState.winningPlayer);
     const winnerName = winner ? `${winner.nickname} (${winner.slotName})` : "타자";
-    
-    winnerInfoLabel.innerText = `우승 타자: ${winnerName}`;
-    showModal("victory-overlay");
-    startFireworks();
+    triggerVictory(gameState.winningPlayer, winnerName);
   } else {
     closeModal("victory-overlay");
     stopFireworks();
@@ -1656,7 +1765,8 @@ function updateAdminPlayersTable() {
           solvedCorrectly: false,
           solvedAt: null,
           rank: 0,
-          lastGuessedInning: 0
+          lastGuessedInning: 0,
+          hintHistory: []
         });
         
         // Also wipe their guess and hint history
@@ -1830,7 +1940,8 @@ btnAdmUpdateState.addEventListener("click", async () => {
         solvedCorrectly: false,
         solvedAt: null,
         rank: 0,
-        lastGuessedInning: 0
+        lastGuessedInning: 0,
+        hintHistory: []
       });
     });
 
@@ -1894,7 +2005,8 @@ btnAdmResetAll.addEventListener("click", () => {
           solvedCorrectly: false,
           solvedAt: null,
           rank: 0,
-          lastGuessedInning: 0
+          lastGuessedInning: 0,
+          hintHistory: []
         });
         
         // delete guesses and hints subcollection
