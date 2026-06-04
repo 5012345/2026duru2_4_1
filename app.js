@@ -251,6 +251,26 @@ function getResultString(res) {
   return `${res.a}a ${res.b}b ${res.c}c`;
 }
 
+function generateWeakHint(targetCode) {
+  if (!targetCode || targetCode.length < 4) return "";
+  
+  const digits = targetCode.split("").map(Number);
+  const sum = digits.reduce((x, y) => x + y, 0);
+  const evens = digits.filter(n => n % 2 === 0).length;
+  const odds = 4 - evens;
+  const max = Math.max(...digits);
+  const min = Math.min(...digits);
+  
+  const hintType = (gameState && gameState.inning ? gameState.inning : 1) % 3;
+  if (hintType === 0) {
+    return `투수 암호의 4자리 숫자의 합은 ${sum}입니다.`;
+  } else if (hintType === 1) {
+    return `투수 암호에 포함된 짝수의 개수는 ${evens}개입니다.`;
+  } else {
+    return `투수 암호의 가장 큰 숫자와 가장 작은 숫자의 차이는 ${max - min}입니다.`;
+  }
+}
+
 /* -------------------------------------------------------------
  * 2. FIRESTORE DATABASE INITIALIZATION
  * Auto-creates game state & player slots if empty
@@ -886,7 +906,8 @@ btnSubmitAnswers.addEventListener("click", async () => {
   
   if (a1 === correctAnswers[0] && a2 === correctAnswers[1] && a3 === correctAnswers[2]) {
     // Correct!
-    solveFeedback.innerText = "분석 완료! 상대 투수의 구질 분석에 성공하여 출루했습니다.";
+    const hint = generateWeakHint(gameState.targetCode);
+    solveFeedback.innerHTML = `분석 완료! 상대 투수의 구질 분석에 성공하여 출루했습니다.<br><span class="math-hint-span">💡 투수 암호 힌트: ${hint}</span>`;
     solveFeedback.className = "feedback-msg success";
     
     ans1.disabled = true;
@@ -931,7 +952,8 @@ btnSubmitAnswers.addEventListener("click", async () => {
 });
 
 function markTopStageSolved() {
-  solveFeedback.innerText = `분석 완료! (${myPlayer.rank}등 에이스 출루 완료)`;
+  const hint = generateWeakHint(gameState.targetCode);
+  solveFeedback.innerHTML = `분석 완료! (${myPlayer.rank}등 에이스 출루 완료)<br><span class="math-hint-span">💡 투수 암호 힌트: ${hint}</span>`;
   solveFeedback.className = "feedback-msg success";
   ans1.disabled = true;
   ans2.disabled = true;
@@ -945,7 +967,7 @@ function markTopStageSolved() {
  * Evaluate Ace/Average slots logic, Home Run class hints
  * ------------------------------------------------------------- */
 
-function setupBottomStage() {
+async function setupBottomStage() {
   // Force flex displays to override any conflicting styles
   stageBottomPanel.style.display = "flex";
   stageBottomPanel.classList.add("active");
@@ -976,7 +998,6 @@ function setupBottomStage() {
         <p class="waiting-text">제출 완료. 다른 선수의 타격이 끝나기를 대기 중입니다... ⚾</p>
       </div>
     `;
-    guessActionBar.classList.add("hidden");
     return;
   }
 
@@ -985,16 +1006,12 @@ function setupBottomStage() {
   let message = "";
 
   if (!myPlayer.solvedCorrectly) {
-    // 오답자/미제출자 -> 추리 슬롯 0개
     slotCount = 0;
     message = "투구 분석(문제 풀이) 실패로 해당 이닝의 타격(추리) 기회를 잃었습니다.";
   } else {
-    // 1등(에이스)인 경우 무조건 2개 슬롯
-    // 2등이면서 타율형 타자인 경우 에이스와 동일하게 2개 슬롯
     if (myPlayer.rank === 1 || (myPlayer.classType === "타율형" && myPlayer.rank === 2)) {
       slotCount = 2;
     } else {
-      // 그 외 정답자는 기본 1개
       slotCount = 1;
     }
   }
@@ -1017,34 +1034,88 @@ function setupBottomStage() {
   if (slotCount === 0) {
     guessLayoutContainer.innerHTML = `<div class="guess-no-perm">${message}</div>`;
   } else {
-    guessActionBar.classList.remove("hidden");
-    guessActionBar.style.display = "flex";
-    for (let i = 1; i <= slotCount; i++) {
-      const slotCard = document.createElement("div");
-      slotCard.className = "guess-slot-card";
+    try {
+      // Fetch past guesses for the current inning to restore on reload
+      const guessesSnap = await db.collection("players").doc(mySlotId).collection("guesses")
+        .where("inning", "==", gameState.inning)
+        .orderBy("timestamp", "asc")
+        .get();
+        
+      const pastGuesses = [];
+      guessesSnap.forEach(doc => {
+        pastGuesses.push(doc.data());
+      });
+
+      // If they already submitted all allowed guesses, force waiting state
+      if (pastGuesses.length >= slotCount) {
+        await db.collection("players").doc(mySlotId).update({
+          lastGuessedInning: gameState.inning
+        });
+        guessLayoutContainer.innerHTML = `
+          <div class="guess-waiting-state">
+            <div class="baseball-spinner">⚾</div>
+            <p class="waiting-text">제출 완료. 다른 선수의 타격이 끝나기를 대기 중입니다... ⚾</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Render slots
+      for (let i = 1; i <= slotCount; i++) {
+        const slotCard = document.createElement("div");
+        slotCard.className = "guess-slot-card";
+        
+        const title = slotCount === 2 ? `타격 슬롯 ${i}` : "타격 슬롯";
+        const pastGuess = pastGuesses.find(g => g.slotIndex === i) || pastGuesses[i - 1];
+        
+        if (pastGuess) {
+          const guessVal = pastGuess.guess;
+          const resultText = pastGuess.result;
+          const isCorrect = resultText.includes("4a");
+          const feedbackClass = isCorrect ? "feedback-msg success" : "feedback-msg error";
+          
+          slotCard.innerHTML = `
+            <div class="guess-slot-title">${title}</div>
+            <div class="digits-input-wrapper">
+              <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="0" value="${guessVal[0]}" disabled>
+              <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="1" value="${guessVal[1]}" disabled>
+              <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="2" value="${guessVal[2]}" disabled>
+              <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="3" value="${guessVal[3]}" disabled>
+            </div>
+            <button class="btn btn-secondary btn-full" disabled style="margin-top: 15px; font-size: 0.9rem; padding: 10px 16px;">제출 완료 ⚾</button>
+            <div class="${feedbackClass}" style="margin-top: 10px; min-height: 20px; font-size: 0.95rem; text-align: center;">판정 결과: ${resultText}</div>
+          `;
+        } else {
+          slotCard.innerHTML = `
+            <div class="guess-slot-title">${title}</div>
+            <div class="digits-input-wrapper">
+              <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="0">
+              <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="1">
+              <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="2">
+              <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="3">
+            </div>
+            <button class="btn btn-success btn-full btn-submit-slot-guess" data-slot="${i}" style="margin-top: 15px; font-size: 0.9rem; padding: 10px 16px;">배트 휘두르기 (추리 제출)</button>
+            <div class="feedback-msg guess-slot-feedback" id="guess-slot-${i}-feedback" style="margin-top: 10px; min-height: 20px; font-size: 0.95rem; text-align: center;"></div>
+          `;
+        }
+        guessLayoutContainer.appendChild(slotCard);
+      }
       
-      const title = slotCount === 2 ? `타격 슬롯 ${i}` : "타격 슬롯";
-      slotCard.innerHTML = `
-        <div class="guess-slot-title">${title}</div>
-        <div class="digits-input-wrapper">
-          <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="0">
-          <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="1">
-          <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="2">
-          <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="3">
-        </div>
-      `;
-      guessLayoutContainer.appendChild(slotCard);
+      // Bind click handlers for submit buttons inside slot cards
+      bindSlotSubmitButtons(slotCount);
+      
+      // Add input jumping logic for digits input boxes
+      setupDigitBoxesJumping();
+
+    } catch (err) {
+      console.error("Error setting up bottom stage inputs:", err);
     }
-    
-    // Add input jumping logic for digits input boxes
-    setupDigitBoxesJumping();
   }
 }
 
 function setupDigitBoxesJumping() {
   const allInputs = document.querySelectorAll(".digit-box");
   allInputs.forEach((input, index) => {
-    // Only accept numeric input
     input.addEventListener("input", (e) => {
       input.value = input.value.replace(/[^0-9]/g, "");
       
@@ -1070,111 +1141,114 @@ function setupDigitBoxesJumping() {
   });
 }
 
-// Click Submit guesses
-document.getElementById("btn-submit-guess").addEventListener("click", async () => {
-  if (!myPlayer) {
-    showCustomAlert("제출 오류", "선수 등록이 되어있지 않습니다. 로비에서 먼저 타자로 등록해주세요.");
-    return;
-  }
-  if (!gameState) return;
-
-  const target = gameState.targetCode;
-  const numSlots = guessLayoutContainer.querySelectorAll(".guess-slot-card").length;
-  const guesses = [];
-
-  for (let i = 1; i <= numSlots; i++) {
-    const digitInputs = document.querySelectorAll(`.slot-${i}-digit`);
-    let guessVal = "";
-    digitInputs.forEach(inp => {
-      guessVal += inp.value;
-    });
-
-    if (guessVal.length < 4) {
-      guessFeedback.innerText = `타격 슬롯 ${i}의 4자리 숫자를 모두 입력해 주세요!`;
-      guessFeedback.className = "feedback-msg error";
-      return;
-    }
-    
-    // Check for duplicate digits in a single guess
-    const uniqueDigits = new Set(guessVal);
-    if (uniqueDigits.size < 4) {
-      guessFeedback.innerText = `타격 슬롯 ${i}의 입력값에 중복된 숫자가 있습니다. 중복되지 않도록 입력해주세요!`;
-      guessFeedback.className = "feedback-msg error";
-      return;
-    }
-    
-    guesses.push(guessVal);
-  }
-
-  // Submit and evaluate
-  const btnSubmitGuess = document.getElementById("btn-submit-guess");
-  if (btnSubmitGuess) {
-    btnSubmitGuess.disabled = true;
-    btnSubmitGuess.innerText = "대기 중...";
-  }
-
-  try {
-    const batch = db.batch();
-    let bestResult = null;
-    let winDetected = false;
-    
-    for (let guessCode of guesses) {
-      const res = evaluateGuessCode(guessCode, target);
-      const resString = getResultString(res);
+function bindSlotSubmitButtons(slotCount) {
+  const submitButtons = guessLayoutContainer.querySelectorAll(".btn-submit-slot-guess");
+  submitButtons.forEach(btn => {
+    btn.addEventListener("click", async () => {
+      if (!myPlayer) {
+        showCustomAlert("제출 오류", "선수 등록이 되어있지 않습니다. 로비에서 먼저 타자로 등록해주세요.");
+        return;
+      }
+      if (!gameState) return;
       
-      // Keep best result for UI feedback (highest 'a' count)
-      if (!bestResult || res.a > bestResult.a) {
-        bestResult = res;
+      const slotIndex = parseInt(btn.getAttribute("data-slot"));
+      const digitInputs = document.querySelectorAll(`.slot-${slotIndex}-digit`);
+      let guessVal = "";
+      
+      digitInputs.forEach(inp => {
+        guessVal += inp.value.trim();
+      });
+
+      const feedbackEl = document.getElementById(`guess-slot-${slotIndex}-feedback`);
+      
+      if (guessVal.length < 4) {
+        if (feedbackEl) {
+          feedbackEl.innerText = "4자리 숫자를 모두 입력해 주세요!";
+          feedbackEl.className = "feedback-msg error";
+        }
+        return;
       }
       
-      if (res.a === 4) {
-        winDetected = true;
+      const uniqueDigits = new Set(guessVal);
+      if (uniqueDigits.size < 4) {
+        if (feedbackEl) {
+          feedbackEl.innerText = "중복된 숫자가 있습니다. 서로 다른 숫자를 입력해 주세요!";
+          feedbackEl.className = "feedback-msg error";
+        }
+        return;
       }
 
-      // Add to player's records subcollection
-      const newGuessRef = db.collection("players").doc(mySlotId).collection("guesses").doc();
-      batch.set(newGuessRef, {
-        inning: gameState.inning,
-        guess: guessCode,
-        result: resString,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }
+      digitInputs.forEach(inp => inp.disabled = true);
+      btn.disabled = true;
+      btn.innerText = "대기 중...";
+      
+      const target = gameState.targetCode;
+      
+      try {
+        const res = evaluateGuessCode(guessVal, target);
+        const resString = getResultString(res);
+        const isCorrect = res.a === 4;
+        
+        const batch = db.batch();
+        const newGuessRef = db.collection("players").doc(mySlotId).collection("guesses").doc();
+        
+        batch.set(newGuessRef, {
+          inning: gameState.inning,
+          guess: guessVal,
+          result: resString,
+          slotIndex: slotIndex,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-    // Set lastGuessedInning to record that player has completed guessing for this inning
-    const playerRef = db.collection("players").doc(mySlotId);
-    batch.update(playerRef, {
-      lastGuessedInning: gameState.inning
+        const allSubmitButtons = guessLayoutContainer.querySelectorAll(".btn-submit-slot-guess");
+        let allSubmitted = true;
+        allSubmitButtons.forEach(b => {
+          if (b !== btn && !b.disabled) {
+            allSubmitted = false;
+          }
+        });
+
+        if (allSubmitted || isCorrect) {
+          const playerRef = db.collection("players").doc(mySlotId);
+          batch.update(playerRef, {
+            lastGuessedInning: gameState.inning
+          });
+        }
+
+        await batch.commit();
+
+        btn.innerText = "제출 완료 ⚾";
+        btn.className = "btn btn-secondary btn-full";
+        
+        if (feedbackEl) {
+          feedbackEl.innerText = `판정 결과: ${resString}`;
+          if (res.a > 0 || res.b > 0) {
+            feedbackEl.className = "feedback-msg success";
+          } else {
+            feedbackEl.className = "feedback-msg error";
+          }
+        }
+
+        if (isCorrect) {
+          await db.collection("game").doc("state").update({
+            status: "finished",
+            winningPlayer: mySlotId
+          });
+        }
+
+      } catch (err) {
+        console.error("Error submitting slot guess:", err);
+        digitInputs.forEach(inp => inp.disabled = false);
+        btn.disabled = false;
+        btn.innerText = "배트 휘두르기 (추리 제출)";
+        if (feedbackEl) {
+          feedbackEl.innerText = "제출 에러: " + err.message;
+          feedbackEl.className = "feedback-msg error";
+        }
+      }
     });
-
-    await batch.commit();
-
-    // Visual feedback
-    if (bestResult) {
-      guessFeedback.innerText = `판정 결과: ${getResultString(bestResult)}`;
-      if (bestResult.a > 0 || bestResult.b > 0) {
-        guessFeedback.className = "feedback-msg success";
-      } else {
-        guessFeedback.className = "feedback-msg error";
-      }
-    }
-
-    // Win condition check: 4a (Strikeout / Homerun)
-    if (winDetected) {
-      await db.collection("game").doc("state").update({
-        status: "finished",
-        winningPlayer: mySlotId
-      });
-    }
-
-  } catch (err) {
-    console.error("Guess submit error:", err);
-    if (btnSubmitGuess) {
-      btnSubmitGuess.disabled = false;
-      btnSubmitGuess.innerText = "배트 휘두르기 (추리 제출)";
-    }
-  }
-});
+  });
+}
 
 /* -------------------------------------------------------------
  * 8. [광고시간] STAGE

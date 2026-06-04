@@ -1402,3 +1402,15 @@ body {
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(27, 77, 62, 0.2);
   border: 2px solid var(--primary-color);
 }
+
+.math-hint-span {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: rgba(255, 251, 20, 0.1);
+  border: 1px dashed var(--warning-color);
+  border-radius: 8px;
+  color: var(--warning-color);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
