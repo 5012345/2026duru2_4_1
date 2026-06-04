@@ -758,6 +758,7 @@ async function autoAdvanceStage() {
  * ------------------------------------------------------------- */
 
 function setupTopStage() {
+  stageTopPanel.style.display = "flex";
   stageTopPanel.classList.add("active");
   
   // Reset fields
@@ -768,6 +769,7 @@ function setupTopStage() {
   ans2.disabled = false;
   ans3.disabled = false;
   btnSubmitAnswers.disabled = false;
+  btnSubmitAnswers.innerText = "분석 결과 전송 (제출)";
   solveFeedback.innerText = "";
   solveFeedback.className = "feedback-msg";
 
@@ -839,13 +841,15 @@ btnSubmitAnswers.addEventListener("click", async () => {
   
   if (a1 === correctAnswers[0] && a2 === correctAnswers[1] && a3 === correctAnswers[2]) {
     // Correct!
+    btnSubmitAnswers.disabled = true;
+    btnSubmitAnswers.innerText = "제출 완료 ⚾";
+
     solveFeedback.innerText = "분석 완료! 상대 투수의 구질 분석에 성공하여 출루했습니다.";
     solveFeedback.className = "feedback-msg success";
     
     ans1.disabled = true;
     ans2.disabled = true;
     ans3.disabled = true;
-    btnSubmitAnswers.disabled = true;
 
     // Register correct answer and rank in Firestore
     try {
@@ -885,6 +889,7 @@ function markTopStageSolved() {
   ans2.disabled = true;
   ans3.disabled = true;
   btnSubmitAnswers.disabled = true;
+  btnSubmitAnswers.innerText = "제출 완료 ⚾";
 }
 
 /* -------------------------------------------------------------
@@ -893,10 +898,21 @@ function markTopStageSolved() {
  * ------------------------------------------------------------- */
 
 function setupBottomStage() {
+  // Force flex displays to override any conflicting styles
+  stageBottomPanel.style.display = "flex";
   stageBottomPanel.classList.add("active");
+  
+  guessLayoutContainer.style.display = "flex";
   guessLayoutContainer.innerHTML = "";
   guessFeedback.innerText = "";
   guessFeedback.className = "feedback-msg";
+  
+  // Re-enable and reset guess submit button display
+  const btnSubmitGuess = document.getElementById("btn-submit-guess");
+  if (btnSubmitGuess) {
+    btnSubmitGuess.disabled = false;
+    btnSubmitGuess.innerText = "배트 휘두르기 (추리 제출)";
+  }
   guessActionBar.classList.add("hidden");
 
   if (!myPlayer) return;
@@ -935,14 +951,14 @@ function setupBottomStage() {
   // 3. 홈런형 타자 능력 구현: 3, 4이닝에 추가 힌트 팝업 제공
   if (myPlayer.classType === "홈런형" && myPlayer.solvedCorrectly && !homerunHintShown) {
     if (gameState.inning === 3 || gameState.inning === 4) {
-      homerunHintShown = true;
       const targetCode = gameState.targetCode;
-      // 3회이면 0번째 숫자, 4회이면 1번째 숫자 노출
-      const hintDigit = targetCode[gameState.inning - 3];
-      
-      setTimeout(() => {
-        showCustomAlert("🔥 홈런형 타자 특별 힌트 🔥", `상대 투수의 4자리 암호에 숫자 '${hintDigit}'가 포함되어 있습니다!`);
-      }, 500);
+      if (targetCode && targetCode.length >= 2) {
+        homerunHintShown = true;
+        const hintDigit = targetCode[gameState.inning - 3];
+        setTimeout(() => {
+          showCustomAlert("🔥 홈런형 타자 특별 힌트 🔥", `상대 투수의 4자리 암호에 숫자 '${hintDigit}'가 포함되어 있습니다!`);
+        }, 500);
+      }
     }
   }
 
@@ -951,6 +967,7 @@ function setupBottomStage() {
     guessLayoutContainer.innerHTML = `<div class="guess-no-perm">${message}</div>`;
   } else {
     guessActionBar.classList.remove("hidden");
+    guessActionBar.style.display = "flex";
     for (let i = 1; i <= slotCount; i++) {
       const slotCard = document.createElement("div");
       slotCard.className = "guess-slot-card";
@@ -1035,6 +1052,12 @@ document.getElementById("btn-submit-guess").addEventListener("click", async () =
   }
 
   // Submit and evaluate
+  const btnSubmitGuess = document.getElementById("btn-submit-guess");
+  if (btnSubmitGuess) {
+    btnSubmitGuess.disabled = true;
+    btnSubmitGuess.innerText = "대기 중...";
+  }
+
   try {
     const batch = db.batch();
     let bestResult = null;
@@ -1091,6 +1114,10 @@ document.getElementById("btn-submit-guess").addEventListener("click", async () =
 
   } catch (err) {
     console.error("Guess submit error:", err);
+    if (btnSubmitGuess) {
+      btnSubmitGuess.disabled = false;
+      btnSubmitGuess.innerText = "배트 휘두르기 (추리 제출)";
+    }
   }
 });
 
