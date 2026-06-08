@@ -280,6 +280,24 @@ function generateWeakHint(targetCode, existingHints = []) {
   let attempts = 0;
   const maxAttempts = 200;
   
+  while (attempts < maxAttempts) {
+    const candidate = pool[Math.floor(Math.random() * pool.length)];
+    if (!existingHints.includes(candidate)) {
+      chosenHint = candidate;
+      break;
+    }
+    attempts++;
+  }
+  
+  if (!chosenHint) {
+    const unused = pool.filter(h => !existingHints.includes(h));
+    if (unused.length > 0) {
+      chosenHint = unused[Math.floor(Math.random() * unused.length)];
+    } else {
+      chosenHint = pool[Math.floor(Math.random() * pool.length)];
+    }
+  }
+  
   return chosenHint;
 }
 
@@ -289,161 +307,22 @@ function generateWeakHint(targetCode, existingHints = []) {
  * ------------------------------------------------------------- */
 class BaseballOrganBGM {
   constructor() {
-    this.audioCtx = null;
+    this.audio = new Audio("bgm.mp3");
+    this.audio.loop = true;
+    this.audio.volume = 0.4;
     this.isPlaying = false;
-    this.sequenceTimeout = null;
-    this.notes = [
-      { note: "C4", dur: 2 },
-      { note: "C5", dur: 1 },
-      { note: "A4", dur: 1.5 },
-      { note: "G4", dur: 1.5 },
-      { note: "E4", dur: 1 },
-      { note: "G4", dur: 2 },
-      { note: "D4", dur: 4 },
-      
-      { note: "C4", dur: 2 },
-      { note: "C5", dur: 1 },
-      { note: "A4", dur: 1.5 },
-      { note: "G4", dur: 1.5 },
-      { note: "E4", dur: 1 },
-      { note: "G4", dur: 4 },
-      
-      { note: "A4", dur: 2 },
-      { note: "F#4", dur: 1 },
-      { note: "A4", dur: 1.5 },
-      { note: "G4", dur: 1.5 },
-      { note: "E4", dur: 1 },
-      { note: "G4", dur: 2 },
-      { note: "E4", dur: 1 },
-      { note: "D4", dur: 3 },
-      
-      { note: "A4", dur: 2 },
-      { note: "A4", dur: 1 },
-      { note: "B4", dur: 1.5 },
-      { note: "C5", dur: 1.5 },
-      { note: "D5", dur: 1 },
-      { note: "B4", dur: 2 },
-      { note: "A4", dur: 1 },
-      { note: "G4", dur: 3 },
-      
-      { note: "C4", dur: 2 },
-      { note: "C5", dur: 1 },
-      { note: "A4", dur: 1.5 },
-      { note: "G4", dur: 1.5 },
-      { note: "E4", dur: 1 },
-      { note: "G4", dur: 2 },
-      { note: "D4", dur: 4 },
-      
-      { note: "C4", dur: 2 },
-      { note: "E4", dur: 1 },
-      { note: "G4", dur: 2 },
-      { note: "C5", dur: 1 },
-      { note: "B4", dur: 1.5 },
-      { note: "A4", dur: 1.5 },
-      { note: "G4", dur: 1 },
-      
-      { note: "F#4", dur: 2 },
-      { note: "G4", dur: 1 },
-      { note: "A4", dur: 3 },
-      { note: "B4", dur: 2 },
-      { note: "C5", dur: 4 }
-    ];
-    this.frequencies = {
-      "C4": 261.63, "D4": 293.66, "E4": 329.63, "F4": 349.23, "F#4": 369.99, "G4": 392.00, "A4": 440.00, "B4": 493.88,
-      "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99
-    };
-    this.tempo = 160; // BPM
-    this.currentIndex = 0;
-  }
-
-  initAudio() {
-    if (!this.audioCtx) {
-      this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
   }
 
   start() {
-    this.initAudio();
-    if (this.audioCtx && this.audioCtx.state === "suspended") {
-      this.audioCtx.resume();
-    }
-    if (this.isPlaying) return;
     this.isPlaying = true;
-    this.currentIndex = 0;
-    this.playNext();
+    this.audio.play().catch(e => {
+      console.warn("Audio play blocked by browser or failed to load:", e);
+    });
   }
 
   stop() {
     this.isPlaying = false;
-    if (this.sequenceTimeout) {
-      clearTimeout(this.sequenceTimeout);
-      this.sequenceTimeout = null;
-    }
-  }
-
-  playNext() {
-    if (!this.isPlaying) return;
-    if (this.currentIndex >= this.notes.length) {
-      this.currentIndex = 0; // Loop melody
-    }
-
-    const item = this.notes[this.currentIndex];
-    const freq = this.frequencies[item.note];
-    const beatDuration = 60 / this.tempo;
-    const duration = item.dur * beatDuration;
-
-    if (freq) {
-      this.playOrganNote(freq, duration);
-    }
-
-    this.currentIndex++;
-    this.sequenceTimeout = setTimeout(() => {
-      this.playNext();
-    }, duration * 1000);
-  }
-
-  playOrganNote(freq, duration) {
-    if (!this.audioCtx || this.audioCtx.state === "suspended") return;
-    
-    // Create fundamental oscillator (triangle) and secondary harmonic (sine, 1 octave higher)
-    const osc = this.audioCtx.createOscillator();
-    const subOsc = this.audioCtx.createOscillator();
-    const gainNode = this.audioCtx.createGain();
-    const subGain = this.audioCtx.createGain();
-    
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
-    
-    subOsc.type = 'sine';
-    subOsc.frequency.setValueAtTime(freq * 2, this.audioCtx.currentTime);
-    
-    gainNode.gain.setValueAtTime(0.08, this.audioCtx.currentTime); // Keep background level
-    subGain.gain.setValueAtTime(0.04, this.audioCtx.currentTime);
-    
-    osc.connect(gainNode);
-    subOsc.connect(subGain);
-    
-    gainNode.connect(this.audioCtx.destination);
-    subGain.connect(this.audioCtx.destination);
-    
-    const now = this.audioCtx.currentTime;
-    
-    // Soft attack, sustain, soft release envelope
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.08, now + 0.05);
-    gainNode.gain.setValueAtTime(0.08, now + duration - 0.05);
-    gainNode.gain.linearRampToValueAtTime(0, now + duration);
-    
-    subGain.gain.setValueAtTime(0, now);
-    subGain.gain.linearRampToValueAtTime(0.04, now + 0.05);
-    subGain.gain.setValueAtTime(0.04, now + duration - 0.05);
-    subGain.gain.linearRampToValueAtTime(0, now + duration);
-    
-    osc.start(now);
-    subOsc.start(now);
-    
-    osc.stop(now + duration);
-    subOsc.stop(now + duration);
+    this.audio.pause();
   }
 }
 
@@ -1280,25 +1159,23 @@ async function setupBottomStage() {
   }
 
   // 2. 타율/에이스 능력 구현: 추리 슬롯 개수 판정
-  let slotCount = 0;
-  let message = "";
+  let slotCount = 1;
 
-  if (!myPlayer.solvedCorrectly) {
-    slotCount = 0;
-    message = "투구 분석(문제 풀이) 실패로 해당 이닝의 타격(추리) 기회를 잃었습니다.";
-  } else {
+  if (myPlayer.solvedCorrectly) {
     if (myPlayer.rank === 1 || (myPlayer.classType === "타율형" && myPlayer.rank === 2)) {
       slotCount = 2;
     } else {
       slotCount = 1;
     }
+  } else {
+    slotCount = 1;
   }
 
-  // 3. 홈런형 타자 능력 구현: 3, 4이닝에 추가 힌트 팝업 제공
-  if (myPlayer.classType === "홈런형" && myPlayer.solvedCorrectly) {
-    if (gameState.inning === 3 || gameState.inning === 4) {
+  // 3. 홈런형 타자 능력 구현: 3, 5이닝에 추가 힌트 팝업 제공 (문제 풀이 여부와 무관)
+  if (myPlayer.classType === "홈런형") {
+    if (gameState.inning === 3 || gameState.inning === 5) {
       const targetCode = gameState.targetCode;
-      if (targetCode && targetCode.length >= 2) {
+      if (targetCode && targetCode.length >= 3) {
         const hintDigit = targetCode[gameState.inning - 3];
         const homerunHintText = `[홈런형 타자 특별 힌트] 상대 투수의 4자리 암호에 숫자 '${hintDigit}'가 포함되어 있습니다!`;
         const existingHints = myPlayer.hintHistory || [];
