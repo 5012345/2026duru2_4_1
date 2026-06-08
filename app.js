@@ -1545,12 +1545,29 @@ document.getElementById("btn-view-records").addEventListener("click", async () =
       hintsList.innerHTML = '<li class="record-list-empty">아직 획득한 힌트가 없습니다.</li>';
     } else {
       pastHints.forEach(data => {
+        let displayHint = data.hint;
+        
+        // Defensive self-healing: if the fetched hint is empty, dynamically regenerate and update Firestore
+        if (!displayHint && gameState && gameState.targetCode) {
+          displayHint = generateWeakHint(gameState.targetCode, []);
+          
+          const batch = db.batch();
+          const pRef = db.collection("players").doc(mySlotId);
+          const hRef = db.collection("players").doc(mySlotId).collection("hints").doc(`inning_${data.inning}`);
+          
+          batch.update(hRef, { hint: displayHint });
+          batch.update(pRef, {
+            hintHistory: firebase.firestore.FieldValue.arrayUnion(displayHint)
+          });
+          batch.commit().catch(err => console.error("Error healing hint database:", err));
+        }
+
         const li = document.createElement("li");
         li.className = "record-list-item";
-        const stageSuffix = data.stage || (data.hint.includes("홈런형") ? "말" : "초");
+        const stageSuffix = data.stage || ((displayHint && displayHint.includes("홈런형")) ? "말" : "초");
         li.innerHTML = `
           <span class="record-list-item-inning">${data.inning}회 ${stageSuffix}</span>
-          <span class="record-list-item-hint">${data.hint}</span>
+          <span class="record-list-item-hint">${displayHint || "힌트 분석 중..."}</span>
         `;
         hintsList.appendChild(li);
       });
