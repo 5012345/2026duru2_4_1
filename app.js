@@ -29,6 +29,8 @@ let playersList = [];
 let localTimerInterval = null;
 let countdownInterval = null;
 let homerunHintShown = false;
+let bgmInstance = null;
+let bgmEnabled = false;
 
 // DOM Elements
 const lobbyScreen = document.getElementById("lobby-screen");
@@ -278,30 +280,171 @@ function generateWeakHint(targetCode, existingHints = []) {
   let attempts = 0;
   const maxAttempts = 200;
   
-  const unusedHints = pool.filter(h => !existingHints.includes(h));
-  if (unusedHints.length === 0) {
-    // Fallback: If all hints have been used, pick a random one
-    const randIdx = Math.floor(Math.random() * pool.length);
-    return pool[randIdx];
-  }
-  
-  while (attempts < maxAttempts) {
-    const randIdx = Math.floor(Math.random() * pool.length);
-    const candidate = pool[randIdx];
-    if (!existingHints.includes(candidate)) {
-      chosenHint = candidate;
-      break;
-    }
-    attempts++;
-  }
-  
-  if (!chosenHint) {
-    // Safety fallback
-    const randIdx = Math.floor(Math.random() * unusedHints.length);
-    chosenHint = unusedHints[randIdx];
-  }
-  
   return chosenHint;
+}
+
+/* -------------------------------------------------------------
+ * Synthesized Web Audio BGM Player: "Take Me Out to the Ball Game"
+ * Retro-style 8-bit/organ sound using Oscillator nodes
+ * ------------------------------------------------------------- */
+class BaseballOrganBGM {
+  constructor() {
+    this.audioCtx = null;
+    this.isPlaying = false;
+    this.sequenceTimeout = null;
+    this.notes = [
+      { note: "C4", dur: 2 },
+      { note: "C5", dur: 1 },
+      { note: "A4", dur: 1.5 },
+      { note: "G4", dur: 1.5 },
+      { note: "E4", dur: 1 },
+      { note: "G4", dur: 2 },
+      { note: "D4", dur: 4 },
+      
+      { note: "C4", dur: 2 },
+      { note: "C5", dur: 1 },
+      { note: "A4", dur: 1.5 },
+      { note: "G4", dur: 1.5 },
+      { note: "E4", dur: 1 },
+      { note: "G4", dur: 4 },
+      
+      { note: "A4", dur: 2 },
+      { note: "F#4", dur: 1 },
+      { note: "A4", dur: 1.5 },
+      { note: "G4", dur: 1.5 },
+      { note: "E4", dur: 1 },
+      { note: "G4", dur: 2 },
+      { note: "E4", dur: 1 },
+      { note: "D4", dur: 3 },
+      
+      { note: "A4", dur: 2 },
+      { note: "A4", dur: 1 },
+      { note: "B4", dur: 1.5 },
+      { note: "C5", dur: 1.5 },
+      { note: "D5", dur: 1 },
+      { note: "B4", dur: 2 },
+      { note: "A4", dur: 1 },
+      { note: "G4", dur: 3 },
+      
+      { note: "C4", dur: 2 },
+      { note: "C5", dur: 1 },
+      { note: "A4", dur: 1.5 },
+      { note: "G4", dur: 1.5 },
+      { note: "E4", dur: 1 },
+      { note: "G4", dur: 2 },
+      { note: "D4", dur: 4 },
+      
+      { note: "C4", dur: 2 },
+      { note: "E4", dur: 1 },
+      { note: "G4", dur: 2 },
+      { note: "C5", dur: 1 },
+      { note: "B4", dur: 1.5 },
+      { note: "A4", dur: 1.5 },
+      { note: "G4", dur: 1 },
+      
+      { note: "F#4", dur: 2 },
+      { note: "G4", dur: 1 },
+      { note: "A4", dur: 3 },
+      { note: "B4", dur: 2 },
+      { note: "C5", dur: 4 }
+    ];
+    this.frequencies = {
+      "C4": 261.63, "D4": 293.66, "E4": 329.63, "F4": 349.23, "F#4": 369.99, "G4": 392.00, "A4": 440.00, "B4": 493.88,
+      "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99
+    };
+    this.tempo = 160; // BPM
+    this.currentIndex = 0;
+  }
+
+  initAudio() {
+    if (!this.audioCtx) {
+      this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+
+  start() {
+    this.initAudio();
+    if (this.audioCtx && this.audioCtx.state === "suspended") {
+      this.audioCtx.resume();
+    }
+    if (this.isPlaying) return;
+    this.isPlaying = true;
+    this.currentIndex = 0;
+    this.playNext();
+  }
+
+  stop() {
+    this.isPlaying = false;
+    if (this.sequenceTimeout) {
+      clearTimeout(this.sequenceTimeout);
+      this.sequenceTimeout = null;
+    }
+  }
+
+  playNext() {
+    if (!this.isPlaying) return;
+    if (this.currentIndex >= this.notes.length) {
+      this.currentIndex = 0; // Loop melody
+    }
+
+    const item = this.notes[this.currentIndex];
+    const freq = this.frequencies[item.note];
+    const beatDuration = 60 / this.tempo;
+    const duration = item.dur * beatDuration;
+
+    if (freq) {
+      this.playOrganNote(freq, duration);
+    }
+
+    this.currentIndex++;
+    this.sequenceTimeout = setTimeout(() => {
+      this.playNext();
+    }, duration * 1000);
+  }
+
+  playOrganNote(freq, duration) {
+    if (!this.audioCtx || this.audioCtx.state === "suspended") return;
+    
+    // Create fundamental oscillator (triangle) and secondary harmonic (sine, 1 octave higher)
+    const osc = this.audioCtx.createOscillator();
+    const subOsc = this.audioCtx.createOscillator();
+    const gainNode = this.audioCtx.createGain();
+    const subGain = this.audioCtx.createGain();
+    
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+    
+    subOsc.type = 'sine';
+    subOsc.frequency.setValueAtTime(freq * 2, this.audioCtx.currentTime);
+    
+    gainNode.gain.setValueAtTime(0.08, this.audioCtx.currentTime); // Keep background level
+    subGain.gain.setValueAtTime(0.04, this.audioCtx.currentTime);
+    
+    osc.connect(gainNode);
+    subOsc.connect(subGain);
+    
+    gainNode.connect(this.audioCtx.destination);
+    subGain.connect(this.audioCtx.destination);
+    
+    const now = this.audioCtx.currentTime;
+    
+    // Soft attack, sustain, soft release envelope
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.08, now + 0.05);
+    gainNode.gain.setValueAtTime(0.08, now + duration - 0.05);
+    gainNode.gain.linearRampToValueAtTime(0, now + duration);
+    
+    subGain.gain.setValueAtTime(0, now);
+    subGain.gain.linearRampToValueAtTime(0.04, now + 0.05);
+    subGain.gain.setValueAtTime(0.04, now + duration - 0.05);
+    subGain.gain.linearRampToValueAtTime(0, now + duration);
+    
+    osc.start(now);
+    subOsc.start(now);
+    
+    osc.stop(now + duration);
+    subOsc.stop(now + duration);
+  }
 }
 
 /* -------------------------------------------------------------
@@ -393,8 +536,14 @@ db.collection("players").onSnapshot(snapshot => {
           showScreen("game-screen");
           if (gameState.stage === "bottom") {
             setupBottomStage();
-          } else if (gameState.stage === "top" && myPlayer.solvedCorrectly) {
-            markTopStageSolved();
+          } else if (gameState.stage === "top") {
+            if (myPlayer.solvedCorrectly) {
+              markTopStageSolved();
+            } else {
+              setupTopStage();
+            }
+          } else if (gameState.stage === "ad") {
+            setupAdStage();
           }
         } else {
           showScreen("lobby-screen");
@@ -483,10 +632,6 @@ function renderSlots() {
       }
       
       card.addEventListener("click", () => {
-        if (gameState && gameState.status === "playing") {
-          showCustomAlert("경기 시작됨", "이미 경기가 시작되었습니다. 대기방 모드일 때만 입장할 수 있습니다.");
-          return;
-        }
         selectLobbySlot(player.slotId, player.slotName);
       });
     }
@@ -603,9 +748,20 @@ function checkPlayerSession() {
       myPlayer = me;
       updateMyPlayerTag();
       
-      // If game is already active, go directly to game screen
+      // If game is already active, go directly to game screen and sync stage
       if (gameState && gameState.status === "playing") {
         showScreen("game-screen");
+        if (gameState.stage === "bottom") {
+          setupBottomStage();
+        } else if (gameState.stage === "top") {
+          if (myPlayer.solvedCorrectly) {
+            markTopStageSolved();
+          } else {
+            setupTopStage();
+          }
+        } else if (gameState.stage === "ad") {
+          setupAdStage();
+        }
       } else {
         showScreen("lobby-screen");
         lobbyStatusText.innerText = "라인업 등록 완료! 감독님이 게임을 시작할 때까지 대기해주세요.";
@@ -638,11 +794,22 @@ function showScreen(screenId) {
   if (screenId === "lobby-screen") {
     lobbyScreen.classList.add("active");
     gameBgOverlay.className = "bg-waiting";
-  } else if (screenId === "game-screen") {
-    gameScreen.classList.add("active");
-  } else if (screenId === "admin-screen") {
-    if (adminScreen) adminScreen.classList.add("active");
-    gameBgOverlay.className = "bg-waiting";
+    // Play BGM if enabled
+    if (bgmInstance && bgmEnabled) {
+      bgmInstance.start();
+    }
+  } else {
+    // Stop BGM when leaving lobby screen
+    if (bgmInstance) {
+      bgmInstance.stop();
+    }
+    
+    if (screenId === "game-screen") {
+      gameScreen.classList.add("active");
+    } else if (screenId === "admin-screen") {
+      if (adminScreen) adminScreen.classList.add("active");
+      gameBgOverlay.className = "bg-waiting";
+    }
   }
 }
 
@@ -682,6 +849,14 @@ function handleGameStateTransition() {
   }
 
   // Active game mode
+  // If the player has not registered yet, keep them on the lobby screen to register.
+  const isAdmin = sessionStorage.getItem("adminAuth") === "true";
+  if (!isAdmin && (!mySlotId || !myPlayer || !myPlayer.active)) {
+    showScreen("lobby-screen");
+    lobbyStatusText.innerText = "경기가 이미 진행 중입니다. 빈 슬롯을 선택하여 중도 참가하세요! ⚾";
+    return;
+  }
+
   showScreen("game-screen");
   
   // Set current scoreboard header
@@ -724,20 +899,48 @@ function startStageTimer() {
 }
 
 function updateTimerUI() {
+  // Synchronize admin dashboard stats if available
+  const admSbInning = document.getElementById("adm-sb-inning");
+  if (admSbInning && gameState) {
+    let stageSuffix = "";
+    if (gameState.stage === "top") stageSuffix = "초";
+    else if (gameState.stage === "bottom") stageSuffix = "말";
+    else if (gameState.stage === "ad") stageSuffix = "광고";
+    admSbInning.innerText = `${gameState.inning}회 ${stageSuffix}`;
+  }
+
   if (gameState && gameState.status === "finished") {
     sbTimerText.innerText = "00:00";
+    const admSbTimer = document.getElementById("adm-sb-timer");
+    if (admSbTimer) admSbTimer.innerText = "00:00";
     return;
   }
   if (!gameState || typeof gameState.timeLeft === "undefined") {
     sbTimerText.innerText = "--:--";
+    const admSbTimer = document.getElementById("adm-sb-timer");
+    if (admSbTimer) admSbTimer.innerText = "--:--";
     return;
   }
 
   const secsTotal = gameState.timeLeft;
   const mins = Math.floor(secsTotal / 60);
   const secs = secsTotal % 60;
+  const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   
-  sbTimerText.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  sbTimerText.innerText = timeStr;
+  
+  const admSbTimer = document.getElementById("adm-sb-timer");
+  if (admSbTimer) {
+    admSbTimer.innerText = timeStr;
+    // Color coding for urgency
+    if (secsTotal <= 10) {
+      admSbTimer.style.color = "var(--danger-color)";
+    } else if (secsTotal <= 30) {
+      admSbTimer.style.color = "var(--warning-color)";
+    } else {
+      admSbTimer.style.color = "var(--success-color)";
+    }
+  }
   
   // For ad stage visual timer in center
   if (gameState.stage === "ad") {
@@ -2112,4 +2315,42 @@ window.addEventListener("DOMContentLoaded", async () => {
     checkPlayerSession();
     checkAdminSessionUI();
   }, 1000);
+
+  // Initialize Web Audio Organ BGM
+  bgmInstance = new BaseballOrganBGM();
+
+  // BGM button binding
+  const btnBgm = document.getElementById("btn-lobby-bgm");
+  if (btnBgm) {
+    btnBgm.addEventListener("click", () => {
+      bgmEnabled = !bgmEnabled;
+      if (bgmEnabled) {
+        btnBgm.innerText = "🔇 BGM 끄기";
+        btnBgm.classList.remove("btn-secondary");
+        btnBgm.classList.add("btn-danger");
+        bgmInstance.start();
+      } else {
+        btnBgm.innerText = "🔊 BGM 켜기";
+        btnBgm.classList.remove("btn-danger");
+        btnBgm.classList.add("btn-secondary");
+        bgmInstance.stop();
+      }
+    });
+  }
+
+  // Rules modals bindings
+  const btnLobbyRules = document.getElementById("btn-lobby-rules");
+  const btnGameRules = document.getElementById("btn-game-rules");
+
+  if (btnLobbyRules) {
+    btnLobbyRules.addEventListener("click", () => {
+      showModal("modal-rules");
+    });
+  }
+
+  if (btnGameRules) {
+    btnGameRules.addEventListener("click", () => {
+      showModal("modal-rules");
+    });
+  }
 });
