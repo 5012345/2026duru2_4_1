@@ -29,8 +29,8 @@ let playersList = [];
 let localTimerInterval = null;
 let countdownInterval = null;
 let homerunHintShown = false;
-let bgmInstance = null;
-let bgmEnabled = false;
+let lastSetupInning = null;
+let lastSetupStage = null;
 
 // DOM Elements
 const lobbyScreen = document.getElementById("lobby-screen");
@@ -301,30 +301,6 @@ function generateWeakHint(targetCode, existingHints = []) {
   return chosenHint;
 }
 
-/* -------------------------------------------------------------
- * Synthesized Web Audio BGM Player: "Take Me Out to the Ball Game"
- * Retro-style 8-bit/organ sound using Oscillator nodes
- * ------------------------------------------------------------- */
-class BaseballOrganBGM {
-  constructor() {
-    this.audio = new Audio("bgm.mp3");
-    this.audio.loop = true;
-    this.audio.volume = 0.4;
-    this.isPlaying = false;
-  }
-
-  start() {
-    this.isPlaying = true;
-    this.audio.play().catch(e => {
-      console.warn("Audio play blocked by browser or failed to load:", e);
-    });
-  }
-
-  stop() {
-    this.isPlaying = false;
-    this.audio.pause();
-  }
-}
 
 /* -------------------------------------------------------------
  * 2. FIRESTORE DATABASE INITIALIZATION
@@ -340,7 +316,7 @@ async function ensureDatabaseInitialized() {
         status: "waiting",
         inning: 1,
         stage: "top",
-        timeLeft: 60,
+        timeLeft: 65,
         winningPlayer: null,
         targetCode: generateTargetCode(),
         problems: generateThreeProblems(),
@@ -407,22 +383,27 @@ db.collection("players").onSnapshot(snapshot => {
     const freshMe = playersList.find(p => p.slotId === mySlotId);
     if (freshMe) {
       if (freshMe.active) {
+        const solvedChanged = !myPlayer || myPlayer.solvedCorrectly !== freshMe.solvedCorrectly;
+        const playerRegistered = !myPlayer;
+        
         myPlayer = freshMe;
         updateMyPlayerTag();
         
         // Asynchronous state synchronization to avoid race condition on reload
         if (gameState && gameState.status === "playing") {
           showScreen("game-screen");
-          if (gameState.stage === "bottom") {
-            setupBottomStage();
-          } else if (gameState.stage === "top") {
-            if (myPlayer.solvedCorrectly) {
-              markTopStageSolved();
-            } else {
-              setupTopStage();
+          if (solvedChanged || playerRegistered || lastSetupStage !== gameState.stage || lastSetupInning !== gameState.inning) {
+            if (gameState.stage === "bottom") {
+              setupBottomStage();
+            } else if (gameState.stage === "top") {
+              if (myPlayer.solvedCorrectly) {
+                markTopStageSolved();
+              } else {
+                setupTopStage();
+              }
+            } else if (gameState.stage === "ad") {
+              setupAdStage();
             }
-          } else if (gameState.stage === "ad") {
-            setupAdStage();
           }
         } else {
           showScreen("lobby-screen");
@@ -673,16 +654,7 @@ function showScreen(screenId) {
   if (screenId === "lobby-screen") {
     lobbyScreen.classList.add("active");
     gameBgOverlay.className = "bg-waiting";
-    // Play BGM if enabled
-    if (bgmInstance && bgmEnabled) {
-      bgmInstance.start();
-    }
   } else {
-    // Stop BGM when leaving lobby screen
-    if (bgmInstance) {
-      bgmInstance.stop();
-    }
-    
     if (screenId === "game-screen") {
       gameScreen.classList.add("active");
     } else if (screenId === "admin-screen") {
@@ -801,7 +773,11 @@ function updateTimerUI() {
     return;
   }
 
-  const secsTotal = gameState.timeLeft;
+  let secsTotal = gameState.timeLeft;
+  if (gameState.stage === "top" && secsTotal > 60) {
+    secsTotal = 60;
+  }
+
   const mins = Math.floor(secsTotal / 60);
   const secs = secsTotal % 60;
   const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -873,7 +849,7 @@ async function autoAdvanceStage() {
   
   let nextStage = "top";
   let nextInning = gameState.inning;
-  let initialTimeLeft = 60;
+  let initialTimeLeft = 65;
   let status = "playing";
 
   if (gameState.stage === "top") {
@@ -885,7 +861,7 @@ async function autoAdvanceStage() {
   } else if (gameState.stage === "ad") {
     nextStage = "top";
     nextInning = gameState.inning + 1;
-    initialTimeLeft = 60;
+    initialTimeLeft = 65;
     
     if (nextInning > 9) {
       status = "finished";
@@ -947,44 +923,73 @@ function setupTopStage() {
   ans1.value = "";
   ans2.value = "";
   ans3.value = "";
-  ans1.disabled = false;
-  ans2.disabled = false;
-  ans3.disabled = false;
-  btnSubmitAnswers.disabled = false;
+  ans1.disabled = true;
+  ans2.disabled = true;
+  ans3.disabled = true;
+  btnSubmitAnswers.disabled = true;
   btnSubmitAnswers.innerText = "분석 결과 전송 (제출)";
   solveFeedback.innerText = "";
   solveFeedback.className = "feedback-msg";
 
-  // Render questions
-  if (gameState.problems && gameState.problems.length === 3) {
-    document.getElementById("q1-text").innerHTML = gameState.problems[0].question;
-    document.getElementById("q2-text").innerHTML = gameState.problems[1].question;
-    document.getElementById("q3-text").innerHTML = gameState.problems[2].question;
-    triggerMathJax();
+  // Hide the math problems container initially
+  const mathProblemsContainer = document.getElementById("math-problems-container");
+  if (mathProblemsContainer) {
+    mathProblemsContainer.style.visibility = "hidden";
+  }
+
+  function renderProblems() {
+    if (gameState.problems && gameState.problems.length === 3) {
+      document.getElementById("q1-text").innerHTML = gameState.problems[0].question;
+      document.getElementById("q2-text").innerHTML = gameState.problems[1].question;
+      document.getElementById("q3-text").innerHTML = gameState.problems[2].question;
+      triggerMathJax();
+    }
+    if (mathProblemsContainer) {
+      mathProblemsContainer.style.visibility = "visible";
+    }
+  }
+
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
   }
 
   // 1. 도루형 타자 능력 조건문: player.classType !== '도루형'인 경우에만 5초 카운트다운 실행
-  if (myPlayer && myPlayer.classType !== "도루형") {
-    // Show 5s Countdown overlay
+  const isStealHitter = myPlayer && myPlayer.classType === "도루형";
+  const serverTimeLeft = (gameState && typeof gameState.timeLeft !== "undefined") ? gameState.timeLeft : 60;
+  
+  if (isStealHitter || serverTimeLeft <= 60) {
+    countdownOverlay.classList.add("hidden");
+    renderProblems();
+    if (myPlayer && !myPlayer.solvedCorrectly) {
+      ans1.disabled = false;
+      ans2.disabled = false;
+      ans3.disabled = false;
+      btnSubmitAnswers.disabled = false;
+    }
+  } else {
+    // Show countdown overlay and set the remaining countdown duration
     countdownOverlay.classList.remove("hidden");
     countdownTitle.innerText = `${gameState.inning}회 초 시작`;
     
-    let countdownVal = 5;
-    countdownNumber.innerText = countdownVal;
+    let countdownVal = serverTimeLeft - 60;
+    if (countdownVal < 0) countdownVal = 0;
+    if (countdownVal > 5) countdownVal = 5;
     
-    ans1.disabled = true;
-    ans2.disabled = true;
-    ans3.disabled = true;
-    btnSubmitAnswers.disabled = true;
+    countdownNumber.innerText = countdownVal;
 
     countdownInterval = setInterval(() => {
       countdownVal--;
       if (countdownVal <= 0) {
         clearInterval(countdownInterval);
+        countdownInterval = null;
         countdownOverlay.classList.add("hidden");
         
+        // Render problems now
+        renderProblems();
+
         // Unlock inputs
-        if (!myPlayer.solvedCorrectly) {
+        if (myPlayer && !myPlayer.solvedCorrectly) {
           ans1.disabled = false;
           ans2.disabled = false;
           ans3.disabled = false;
@@ -994,15 +999,15 @@ function setupTopStage() {
         countdownNumber.innerText = countdownVal;
       }
     }, 1000);
-  } else {
-    // 도루형 타자는 카운트다운 없이 즉시 문제 풀이 가능
-    countdownOverlay.classList.add("hidden");
   }
 
   // If player already solved correctly (e.g. page reloaded mid-stage)
   if (myPlayer && myPlayer.solvedCorrectly) {
     markTopStageSolved();
   }
+
+  lastSetupInning = gameState.inning;
+  lastSetupStage = gameState.stage;
 }
 
 // Click Submit math answers
@@ -1113,6 +1118,8 @@ function markTopStageSolved() {
  * ------------------------------------------------------------- */
 
 async function setupBottomStage() {
+  countdownOverlay.classList.add("hidden");
+
   // Force flex displays to override any conflicting styles
   stageBottomPanel.style.display = "flex";
   stageBottomPanel.classList.add("active");
@@ -1297,6 +1304,9 @@ async function setupBottomStage() {
       console.error("Error setting up bottom stage inputs:", err);
     }
   }
+
+  lastSetupInning = gameState.inning;
+  lastSetupStage = gameState.stage;
 }
 
 function setupDigitBoxesJumping() {
@@ -1443,9 +1453,13 @@ function bindSlotSubmitButtons(slotCount) {
  * ------------------------------------------------------------- */
 
 function setupAdStage() {
+  countdownOverlay.classList.add("hidden");
   stageAdPanel.style.display = "flex";
   stageAdPanel.classList.add("active");
   homerunHintShown = false; // Reset for next inning
+
+  lastSetupInning = gameState.inning;
+  lastSetupStage = gameState.stage;
 }
 
 /* -------------------------------------------------------------
@@ -1999,7 +2013,7 @@ btnAdmUpdateState.addEventListener("click", async () => {
   }
 
   try {
-    const initialTimeLeft = 60; // 1회초 is 60 seconds
+    const initialTimeLeft = 65; // 1회초 is 65 seconds (includes 5s countdown)
     
     const updates = {
       status: "playing",
@@ -2106,7 +2120,7 @@ btnAdmResetAll.addEventListener("click", () => {
         status: "waiting",
         inning: 1,
         stage: "top",
-        timeLeft: 60,
+        timeLeft: 65,
         winningPlayer: null,
         targetCode: generateTargetCode(),
         problems: generateThreeProblems(),
@@ -2193,27 +2207,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     checkAdminSessionUI();
   }, 1000);
 
-  // Initialize Web Audio Organ BGM
-  bgmInstance = new BaseballOrganBGM();
-
-  // BGM button binding
-  const btnBgm = document.getElementById("btn-lobby-bgm");
-  if (btnBgm) {
-    btnBgm.addEventListener("click", () => {
-      bgmEnabled = !bgmEnabled;
-      if (bgmEnabled) {
-        btnBgm.innerText = "🔇 BGM 끄기";
-        btnBgm.classList.remove("btn-secondary");
-        btnBgm.classList.add("btn-danger");
-        bgmInstance.start();
-      } else {
-        btnBgm.innerText = "🔊 BGM 켜기";
-        btnBgm.classList.remove("btn-danger");
-        btnBgm.classList.add("btn-secondary");
-        bgmInstance.stop();
-      }
-    });
-  }
 
   // Rules modals bindings
   const btnLobbyRules = document.getElementById("btn-lobby-rules");
