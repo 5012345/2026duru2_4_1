@@ -138,59 +138,59 @@ function generateThreeProblems() {
   }
 
   // 1. Basic Question: Intercepts or specific value
-  let basicQType = Math.random() > 0.5 ? "x_intercept" : "y_intercept";
   let basicText = "";
   let basicAns = 0;
-  
-  if (basicQType === "x_intercept") {
-    // For x-intercept of ax + b to be integer, b = -a * x_intercept
-    let a = randomIntExcludingZero(-4, 4);
-    let xInt = randomIntExcludingZero(-6, 6);
-    let b = -a * xInt;
-    let formula = formatLinearFunction(a, b);
-    basicText = `일차함수 \\( ${formula} \\)의 \\( x \\)절편은?`;
-    basicAns = xInt;
-  } else {
-    // For y-intercept, y = ax + b -> intercept is b
-    let a = randomIntExcludingZero(-5, 5);
-    let b = randomIntExcludingZero(-10, 10);
-    let formula = formatLinearFunction(a, b);
-    basicText = `일차함수 \\( ${formula} \\)의 \\( y \\)절편은?`;
-    basicAns = b;
+  {
+    let basicQType = Math.random() > 0.5 ? "x_intercept" : "y_intercept";
+    if (basicQType === "x_intercept") {
+      let a = randomIntExcludingZero(-4, 4);
+      let xInt = randomIntExcludingZero(-6, 6);
+      let b = -a * xInt;
+      let formula = formatLinearFunction(a, b);
+      basicText = `일차함수 \\( ${formula} \\)의 \\( x \\)절편은?`;
+      basicAns = xInt;
+    } else {
+      let a = randomIntExcludingZero(-5, 5);
+      let b = randomIntExcludingZero(-10, 10);
+      let formula = formatLinearFunction(a, b);
+      basicText = `일차함수 \\( ${formula} \\)의 \\( y \\)절편은?`;
+      basicAns = b;
+    }
   }
 
   // 2. Intermediate Question: Translation and x-intercept
-  let a = randomIntExcludingZero(-4, 4);
-  let xInt = randomIntExcludingZero(-8, 8);
-  let n = randomIntExcludingZero(-6, 6);
-  let b = -a * xInt - n;
-  
-  let formula = formatLinearFunction(a, b);
-  let interText = `일차함수 \\( ${formula} \\)의 그래프를 \\( y \\)축 방향으로 \\( ${n} \\)만큼 평행이동한 그래프의 \\( x \\)절편은?`;
-  let interAns = xInt;
+  let interText = "";
+  let interAns = 0;
+  {
+    let a = randomIntExcludingZero(-4, 4);
+    let xInt = randomIntExcludingZero(-8, 8);
+    let n = randomIntExcludingZero(-6, 6);
+    let b = -a * xInt - n;
+    let formula = formatLinearFunction(a, b);
+    interText = `일차함수 \\( ${formula} \\)의 그래프를 \\( y \\)축 방향으로 \\( ${n} \\)만큼 평행이동한 그래프의 \\( x \\)절편은?`;
+    interAns = xInt;
+  }
 
   // 3. Advanced Question: Two points passing
   let advText = "";
   let advAns = 0;
-  
-  // Find a line passing (x1, y1) and (x2, y2)
-  // Let slope be a, intercept be b. Choose a and b, select x1 and x2, compute y1 and y2.
-  let a = randomIntExcludingZero(-3, 3);
-  let b = randomIntExcludingZero(-5, 5);
-  let x1 = Math.floor(Math.random() * 4) - 4; // -4 to -1
-  let x2 = Math.floor(Math.random() * 4) + 1; // 1 to 4
-  let y1 = a * x1 + b;
-  let y2 = a * x2 + b;
-  
-  let advQType = Math.random() > 0.5 ? "slope_intercept_sum" : "specific_value";
-  if (advQType === "slope_intercept_sum") {
-    advText = `두 점 \\( (${x1}, ${y1}) \\)과 \\( (${x2}, ${y2}) \\)를 지나는 일차함수의 식 \\( y = ax + b \\)에서 \\( a + b \\)의 값은?`;
-    advAns = a + b;
-  } else {
-    // slope is a, passing (x1, y1) -> find constant d in y = cx + d
-    let d = y1 - a * x1; // which is b
-    advText = `기울기가 \\( ${a} \\)이고 점 \\( (${x1}, ${y1}) \\)을 지나는 일차함수의 식 \\( y = cx + d \\)에서 상수 \\( d \\)의 값은?`;
-    advAns = d;
+  {
+    let a = randomIntExcludingZero(-3, 3);
+    let b = randomIntExcludingZero(-5, 5);
+    let x1 = Math.floor(Math.random() * 4) - 4; // -4 to -1
+    let x2 = Math.floor(Math.random() * 4) + 1; // 1 to 4
+    let y1 = a * x1 + b;
+    let y2 = a * x2 + b;
+    
+    let advQType = Math.random() > 0.5 ? "slope_intercept_sum" : "specific_value";
+    if (advQType === "slope_intercept_sum") {
+      advText = `두 점 \\( (${x1}, ${y1}) \\)과 \\( (${x2}, ${y2}) \\)를 지나는 일차함수의 식 \\( y = ax + b \\)에서 \\( a + b \\)의 값은?`;
+      advAns = a + b;
+    } else {
+      let d = y1 - a * x1;
+      advText = `기울기가 \\( ${a} \\)이고 점 \\( (${x1}, ${y1}) \\)을 지나는 일차함수의 식 \\( y = cx + d \\)에서 상수 \\( d \\)의 값은?`;
+      advAns = d;
+    }
   }
 
   return [
