@@ -159,35 +159,15 @@ function generateThreeProblems() {
     basicAns = b;
   }
 
-  // 2. Intermediate Question: Translation or point passing
-  let interQType = Math.random() > 0.5 ? "shift" : "passing_point";
-  let interText = "";
-  let interAns = 0;
-
-  if (interQType === "shift") {
-    // shift: y = ax + b shifted vertically by k -> new y-intercept is b + k
-    let a = randomIntExcludingZero(-4, 4);
-    let b = randomIntExcludingZero(-8, 8);
-    let k = randomIntExcludingZero(-5, 5);
-    let formula = formatLinearFunction(a, b);
-    
-    interText = `일차함수 \\( ${formula} \\)의 그래프를 \\( y \\)축 방향으로 \\( ${k} \\)만큼 평행이동한 그래프의 \\( y \\)절편은?`;
-    interAns = b + k;
-  } else {
-    // passing point: y = ax + k passing through (p, q) -> find k
-    // q = ap + k -> k = q - ap. We pick a, p, k first, compute q.
-    let a = randomIntExcludingZero(-3, 3);
-    let p = randomIntExcludingZero(-4, 4);
-    let k = randomIntExcludingZero(-6, 6);
-    let q = a * p + k;
-    
-    // We display the function formula as "y = ax + k"
-    let aStr = (a === 1) ? "x" : (a === -1) ? "-x" : `${a}x`;
-    let formulaWithK = `y = ${aStr} + k`;
-    
-    interText = `일차함수 \\( ${formulaWithK} \\)의 그래프가 점 \\( (${p}, ${q}) \\)를 지날 때, 상수 \\( k \\)의 값은?`;
-    interAns = k;
-  }
+  // 2. Intermediate Question: Translation and x-intercept
+  let a = randomIntExcludingZero(-4, 4);
+  let xInt = randomIntExcludingZero(-8, 8);
+  let n = randomIntExcludingZero(-6, 6);
+  let b = -a * xInt - n;
+  
+  let formula = formatLinearFunction(a, b);
+  let interText = `일차함수 \\( ${formula} \\)의 그래프를 \\( y \\)축 방향으로 \\( ${n} \\)만큼 평행이동한 그래프의 \\( x \\)절편은?`;
+  let interAns = xInt;
 
   // 3. Advanced Question: Two points passing
   let advText = "";
@@ -264,40 +244,42 @@ function generateWeakHint(targetCode, existingHints = []) {
   const min = Math.min(...digits);
   
   const pool = [
-    `투수 암호의 4자리 숫자의 합은 ${sum}입니다.`,
-    `투수 암호에 포함된 짝수의 개수는 ${evens}개입니다.`,
-    `투수 암호의 가장 큰 숫자와 가장 작은 숫자의 차이는 ${max - min}입니다.`,
-    `투수 암호의 첫 번째 숫자와 네 번째 숫자의 합은 ${digits[0] + digits[3]}입니다.`,
-    `투수 암호의 두 번째 숫자와 세 번째 숫자의 합은 ${digits[1] + digits[2]}입니다.`,
-    `투수 암호의 첫 번째 숫자는 ${digits[0] % 2 === 0 ? '짝수' : '홀수'}입니다.`,
-    `투수 암호의 네 번째 숫자는 ${digits[3] % 2 === 0 ? '짝수' : '홀수'}입니다.`,
-    `투수 암호에 포함된 홀수의 개수는 ${odds}개입니다.`,
-    `투수 암호의 모든 숫자의 합은 ${sum % 2 === 0 ? '짝수' : '홀수'}입니다.`
+    { id: "sum_value", text: `투수 암호의 4자리 숫자의 합은 ${sum}입니다.` },
+    { id: "even_count", text: `투수 암호에 포함된 짝수의 개수는 ${evens}개입니다.` },
+    { id: "min_max_diff", text: `투수 암호의 가장 큰 숫자와 가장 작은 숫자의 차이는 ${max - min}입니다.` },
+    { id: "sum_1_4", text: `투수 암호의 첫 번째 숫자와 네 번째 숫자의 합은 ${digits[0] + digits[3]}입니다.` },
+    { id: "sum_2_3", text: `투수 암호의 두 번째 숫자와 세 번째 숫자의 합은 ${digits[1] + digits[2]}입니다.` },
+    { id: "parity_1", text: `투수 암호의 첫 번째 숫자는 ${digits[0] % 2 === 0 ? '짝수' : '홀수'}입니다.` },
+    { id: "parity_4", text: `투수 암호의 네 번째 숫자는 ${digits[3] % 2 === 0 ? '짝수' : '홀수'}입니다.` },
+    { id: "odd_count", text: `투수 암호에 포함된 홀수의 개수는 ${odds}개입니다.` },
+    { id: "sum_parity", text: `투수 암호의 모든 숫자의 합은 ${sum % 2 === 0 ? '짝수' : '홀수'}입니다.` }
   ];
-  
-  // Use a while loop to check and prevent duplicate hints
+
+  function isRedundant(candidateId, candidateText) {
+    if (existingHints.includes(candidateText)) return true;
+    for (let existing of existingHints) {
+      if (candidateId === "sum_parity" && existing.startsWith("투수 암호의 4자리 숫자의 합은")) {
+        return true;
+      }
+      if (candidateId === "odd_count" && existing.startsWith("투수 암호에 포함된 짝수의 개수")) {
+        return true;
+      }
+      if (candidateId === "even_count" && existing.startsWith("투수 암호에 포함된 홀수의 개수")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const validCandidates = pool.filter(c => !isRedundant(c.id, c.text));
+
   let chosenHint = "";
-  let attempts = 0;
-  const maxAttempts = 200;
-  
-  while (attempts < maxAttempts) {
-    const candidate = pool[Math.floor(Math.random() * pool.length)];
-    if (!existingHints.includes(candidate)) {
-      chosenHint = candidate;
-      break;
-    }
-    attempts++;
+  if (validCandidates.length > 0) {
+    chosenHint = validCandidates[Math.floor(Math.random() * validCandidates.length)].text;
+  } else {
+    chosenHint = pool[Math.floor(Math.random() * pool.length)].text;
   }
-  
-  if (!chosenHint) {
-    const unused = pool.filter(h => !existingHints.includes(h));
-    if (unused.length > 0) {
-      chosenHint = unused[Math.floor(Math.random() * unused.length)];
-    } else {
-      chosenHint = pool[Math.floor(Math.random() * pool.length)];
-    }
-  }
-  
+
   return chosenHint;
 }
 
@@ -1169,7 +1151,7 @@ async function setupBottomStage() {
   let slotCount = 1;
 
   if (myPlayer.solvedCorrectly) {
-    if (myPlayer.rank === 1 || (myPlayer.classType === "타율형" && myPlayer.rank === 2)) {
+    if (myPlayer.rank === 1 || (myPlayer.classType === "타율형" && myPlayer.rank <= 3)) {
       slotCount = 2;
     } else {
       slotCount = 1;
@@ -1178,39 +1160,10 @@ async function setupBottomStage() {
     slotCount = 1;
   }
 
-  // 3. 홈런형 타자 능력 구현: 3, 5이닝에 추가 힌트 팝업 제공 (문제 풀이 여부와 무관)
+  // 3. 홈런형 타자 능력 구현: 2회 말과 4회 말에 추리 슬롯 1개 추가 제공 (문제 풀이 여부와 무관)
   if (myPlayer.classType === "홈런형") {
-    if (gameState.inning === 3 || gameState.inning === 5) {
-      const targetCode = gameState.targetCode;
-      if (targetCode && targetCode.length >= 3) {
-        const hintDigit = targetCode[gameState.inning - 3];
-        const homerunHintText = `[홈런형 타자 특별 힌트] 상대 투수의 4자리 암호에 숫자 '${hintDigit}'가 포함되어 있습니다!`;
-        const existingHints = myPlayer.hintHistory || [];
-        if (!existingHints.includes(homerunHintText)) {
-          try {
-            const playerRef = db.collection("players").doc(mySlotId);
-            const hintRef = db.collection("players").doc(mySlotId).collection("hints").doc(`inning_${gameState.inning}_homerun`);
-            
-            const batch = db.batch();
-            batch.update(playerRef, {
-              hintHistory: firebase.firestore.FieldValue.arrayUnion(homerunHintText)
-            });
-            batch.set(hintRef, {
-              inning: gameState.inning,
-              stage: "말",
-              hint: homerunHintText,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            await batch.commit();
-            
-            setTimeout(() => {
-              showCustomAlert("🔥 홈런형 타자 특별 힌트 🔥", `상대 투수의 4자리 암호에 숫자 '${hintDigit}'가 포함되어 있습니다!`);
-            }, 500);
-          } catch (err) {
-            console.error("Error updating homerun hint:", err);
-          }
-        }
-      }
+    if (gameState.inning === 2 || gameState.inning === 4) {
+      slotCount += 1;
     }
   }
 
