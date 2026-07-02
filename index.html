@@ -58,7 +58,7 @@
                 <div class="class-icon">🔥</div>
                 <div class="class-name">홈런형 타자</div>
                 <div class="class-desc">"한 방이 있습니다."</div>
-                <div class="class-benefit">게임 중 2회 말과 4회 말에 추리 슬롯을 1개 더 추가로 제공받습니다. (최대 3개)</div>
+                <div class="class-benefit">게임 중 2회 말과 3회 말에 상대 투수의 비밀번호에 해당하는 숫자를 전용 힌트로 제공받습니다.</div>
               </div>
               <div class="class-card" data-class="타율형">
                 <div class="class-icon">⚾</div>
@@ -274,7 +274,7 @@
               <label>새 암호 설정:</label>
               <div style="display: flex; gap: 8px; align-items: center;">
                 <input type="text" id="adm-target-code" maxlength="4" placeholder="4자리 숫자" style="width: 100px; text-align: center; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-glass); color: white; padding: 6px 12px; border-radius: 6px; font-family: 'Orbitron', sans-serif; letter-spacing: 2px;">
-                <button id="btn-adm-random-code" class="btn btn-secondary btn-small">랜덤 생성</button>
+                <button id="btn-adm-apply-code" class="btn btn-secondary btn-small">적용</button>
               </div>
             </div>
             <div class="admin-btn-group">
@@ -426,7 +426,7 @@
         <h3 style="color: var(--warning-color); font-size: 1.25rem; margin-top: 25px; margin-bottom: 10px; border-bottom: 1px solid var(--border-glass); padding-bottom: 6px; font-family: 'Noto Sans KR', sans-serif;">🔥 선수 유형 및 특수 능력</h3>
         <p style="margin-bottom: 10px;">로비에서 선수 등록 시 한 가지의 유형을 선택할 수 있으며, 고유 능력을 가집니다.</p>
         <ul style="padding-left: 20px; list-style-type: none; margin-bottom: 15px;">
-          <li style="margin-bottom: 8px;">🔥 <strong>홈런형 타자</strong>: 게임 중 2회 말과 4회 말에 추리 슬롯을 1개 추가로 획득합니다. 만약 2회초 또는 4회초에 1등(에이스)을 달성할 경우 총 3개의 추리 슬롯을 얻게 됩니다.</li>
+          <li style="margin-bottom: 8px;">🔥 <strong>홈런형 타자</strong>: 게임 중 2회 말과 3회 말에 화면 팝업으로 추가 힌트(정답 숫자 1개 위치)를 즉시 제공받으며, 이 힌트는 기록지에 자동 기록됩니다.</li>
           <li style="margin-bottom: 8px;">⚾ <strong>타율형 타자</strong>: 문제 풀이에서 3등 이내에만 들면 에이스(1등)와 동일하게 2개의 추리 슬롯을 제공받습니다.</li>
           <li style="margin-bottom: 8px;">⚡ <strong>도루형 타자</strong>: [초] 스테이지 시작 시, 5초의 대기 페널티 없이 즉시 문제를 풀기 시작합니다.</li>
         </ul>
