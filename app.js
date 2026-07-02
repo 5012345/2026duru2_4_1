@@ -1002,6 +1002,14 @@ async function autoAdvanceStage() {
 function updateTopStageCountdownAndProblems() {
   if (!gameState || gameState.stage !== "top") return;
 
+  const isAdmin = sessionStorage.getItem("adminAuth") === "true";
+  if (isAdmin) {
+    if (!countdownOverlay.classList.contains("hidden")) {
+      countdownOverlay.classList.add("hidden");
+    }
+    return;
+  }
+
   const isStealHitter = myPlayer && myPlayer.classType === "도루형";
   const serverTimeLeft = (gameState && typeof gameState.timeLeft !== "undefined") ? gameState.timeLeft : 60;
   const mathProblemsContainer = document.getElementById("math-problems-container");
