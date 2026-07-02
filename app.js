@@ -83,7 +83,7 @@ const btnLobbyAdminDashboard = document.getElementById("btn-lobby-admin-dashboar
 const admInning = document.getElementById("adm-inning");
 const admStage = document.getElementById("adm-stage");
 const admTargetCode = document.getElementById("adm-target-code");
-const btnAdmRandomCode = document.getElementById("btn-adm-random-code");
+const btnAdmApplyCode = document.getElementById("btn-adm-apply-code");
 const btnAdmUpdateState = document.getElementById("btn-adm-update-state");
 const btnAdmForceNext = document.getElementById("btn-adm-force-next");
 const btnAdmResetAll = document.getElementById("btn-adm-reset-all");
@@ -374,7 +374,12 @@ db.collection("players").onSnapshot(snapshot => {
         // Asynchronous state synchronization to avoid race condition on reload
         if (gameState && gameState.status === "playing") {
           showScreen("game-screen");
-          if (solvedChanged || playerRegistered || lastSetupStage !== gameState.stage || lastSetupInning !== gameState.inning) {
+          const shouldSetupStage = solvedChanged || 
+                                   playerRegistered || 
+                                   lastSetupStage !== gameState.stage || 
+                                   lastSetupInning !== gameState.inning ||
+                                   (gameState.stage === "bottom" && (guessLayoutContainer.innerHTML === "" || guessLayoutContainer.querySelector(".guess-no-perm")));
+          if (shouldSetupStage) {
             if (gameState.stage === "bottom") {
               setupBottomStage();
             } else if (gameState.stage === "top") {
@@ -891,6 +896,10 @@ async function autoAdvanceStage() {
  * ------------------------------------------------------------- */
 
 function setupTopStage() {
+  if (lastSetupInning === gameState.inning && lastSetupStage === gameState.stage) {
+    return;
+  }
+
   stageTopPanel.style.display = "flex";
   stageTopPanel.classList.add("active");
   
@@ -1094,13 +1103,94 @@ function markTopStageSolved() {
   }
 }
 
+async function autoSubmitHintIfCorrect() {
+  if (!myPlayer || !gameState || !mySlotId) return;
+  
+  const correctAnswers = gameState.problems ? gameState.problems.map(p => p.answer) : [];
+  const a1 = parseInt(ans1.value);
+  const a2 = parseInt(ans2.value);
+  const a3 = parseInt(ans3.value);
+  
+  const isInputCorrect = (a1 === correctAnswers[0] && a2 === correctAnswers[1] && a3 === correctAnswers[2]);
+  
+  if (!myPlayer.solvedCorrectly && isInputCorrect) {
+    const existing = myPlayer.hintHistory || [];
+    const hint = generateWeakHint(gameState.targetCode, existing);
+    
+    try {
+      const playerRef = db.collection("players").doc(mySlotId);
+      const stateRef = db.collection("game").doc("state");
+      
+      await db.runTransaction(async transaction => {
+        const stateSnap = await transaction.get(stateRef);
+        const currentSolveCount = stateSnap.data().solveCount || 0;
+        const newRank = currentSolveCount + 1;
+        
+        transaction.update(playerRef, {
+          solvedCorrectly: true,
+          solvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          rank: newRank,
+          hintHistory: firebase.firestore.FieldValue.arrayUnion(hint)
+        });
+        
+        transaction.update(stateRef, {
+          solveCount: newRank
+        });
+
+        const hintRef = db.collection("players").doc(mySlotId).collection("hints").doc(`inning_${gameState.inning}`);
+        transaction.set(hintRef, {
+          inning: gameState.inning,
+          hint: hint,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+      console.log("Auto-submitted math answers and generated hint.");
+    } catch (err) {
+      console.error("Error auto-submitting math answers:", err);
+    }
+  } else if (myPlayer.solvedCorrectly) {
+    try {
+      const hintRef = db.collection("players").doc(mySlotId).collection("hints").doc(`inning_${gameState.inning}`);
+      const hintSnap = await hintRef.get();
+      
+      if (!hintSnap.exists || !hintSnap.data().hint) {
+        const existing = myPlayer.hintHistory || [];
+        const hint = generateWeakHint(gameState.targetCode, existing);
+        
+        const batch = db.batch();
+        batch.set(hintRef, {
+          inning: gameState.inning,
+          hint: hint,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        
+        if (!existing.includes(hint)) {
+          batch.update(db.collection("players").doc(mySlotId), {
+            hintHistory: firebase.firestore.FieldValue.arrayUnion(hint)
+          });
+        }
+        
+        await batch.commit();
+        console.log("Auto-generated missing hint for already solved player.");
+      }
+    } catch (err) {
+      console.error("Error auto-generating missing hint:", err);
+    }
+  }
+}
+
 /* -------------------------------------------------------------
  * 7. [말] STAGE: CODE BREAKING (GUESS)
  * Evaluate Ace/Average slots logic, Home Run class hints
  * ------------------------------------------------------------- */
 
 async function setupBottomStage() {
+  if (lastSetupInning === gameState.inning && lastSetupStage === gameState.stage) {
+    return;
+  }
+
   countdownOverlay.classList.add("hidden");
+  await autoSubmitHintIfCorrect();
 
   // Force flex displays to override any conflicting styles
   stageBottomPanel.style.display = "flex";
@@ -1160,10 +1250,42 @@ async function setupBottomStage() {
     slotCount = 1;
   }
 
-  // 3. 홈런형 타자 능력 구현: 2회 말과 4회 말에 추리 슬롯 1개 추가 제공 (문제 풀이 여부와 무관)
+  // 3. 홈런형 타자 능력 구현: 2회 말과 3회 말에 전용 힌트(정답 숫자 1개 위치) 배부
   if (myPlayer.classType === "홈런형") {
-    if (gameState.inning === 2 || gameState.inning === 4) {
-      slotCount += 1;
+    if (gameState.inning === 2 || gameState.inning === 3) {
+      const targetCode = gameState.targetCode;
+      if (targetCode && targetCode.length >= 4) {
+        // 2회말에는 1번째 숫자(index 0), 3회말에는 2번째 숫자(index 1) 공개
+        const digitIndex = gameState.inning === 2 ? 0 : 1;
+        const hintDigit = targetCode[digitIndex];
+        const homerunHintText = `[홈런형 타자 특별 힌트] 상대 투수의 4자리 암호의 ${digitIndex + 1}번째 숫자는 '${hintDigit}'입니다.`;
+        
+        const existingHints = myPlayer.hintHistory || [];
+        if (!existingHints.includes(homerunHintText)) {
+          try {
+            const playerRef = db.collection("players").doc(mySlotId);
+            const hintRef = db.collection("players").doc(mySlotId).collection("hints").doc(`inning_${gameState.inning}_homerun`);
+            
+            const batch = db.batch();
+            batch.update(playerRef, {
+              hintHistory: firebase.firestore.FieldValue.arrayUnion(homerunHintText)
+            });
+            batch.set(hintRef, {
+              inning: gameState.inning,
+              stage: "말",
+              hint: homerunHintText,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            await batch.commit();
+            
+            setTimeout(() => {
+              showCustomAlert("🔥 홈런형 타자 특별 힌트 🔥", `상대 투수의 4자리 암호의 ${digitIndex + 1}번째 숫자는 '${hintDigit}'입니다.`);
+            }, 500);
+          } catch (err) {
+            console.error("Error writing homerun hint:", err);
+          }
+        }
+      }
     }
   }
 
@@ -1406,6 +1528,10 @@ function bindSlotSubmitButtons(slotCount) {
  * ------------------------------------------------------------- */
 
 function setupAdStage() {
+  if (lastSetupInning === gameState.inning && lastSetupStage === gameState.stage) {
+    return;
+  }
+
   countdownOverlay.classList.add("hidden");
   stageAdPanel.style.display = "flex";
   stageAdPanel.classList.add("active");
@@ -1951,8 +2077,42 @@ if (btnAdmRevealCode) {
   });
 }
 
-btnAdmRandomCode.addEventListener("click", () => {
-  admTargetCode.value = generateTargetCode();
+btnAdmApplyCode.addEventListener("click", async () => {
+  const codeVal = admTargetCode.value.trim();
+  const admErrorMsg = document.getElementById("adm-error-msg");
+
+  if (codeVal.length !== 4 || isNaN(parseInt(codeVal))) {
+    if (admErrorMsg) {
+      admErrorMsg.innerText = "암호는 서로 다른 4자리 숫자여야 합니다.";
+      admErrorMsg.className = "feedback-msg error";
+    }
+    return;
+  }
+  
+  const uniqueCode = new Set(codeVal);
+  if (uniqueCode.size < 4) {
+    if (admErrorMsg) {
+      admErrorMsg.innerText = "암호 숫자는 서로 달라야 합니다 (중복 불가).";
+      admErrorMsg.className = "feedback-msg error";
+    }
+    return;
+  }
+
+  try {
+    await db.collection("game").doc("state").update({
+      targetCode: codeVal
+    });
+    if (admErrorMsg) {
+      admErrorMsg.innerText = `투수 암호가 성공적으로 '${codeVal}'로 변경되었습니다!`;
+      admErrorMsg.className = "feedback-msg success";
+    }
+    admTargetCode.value = "";
+  } catch (err) {
+    if (admErrorMsg) {
+      admErrorMsg.innerText = "암호 적용 에러: " + err;
+      admErrorMsg.className = "feedback-msg error";
+    }
+  }
 });
 
 btnAdmUpdateState.addEventListener("click", async () => {
