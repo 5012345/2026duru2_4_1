@@ -184,7 +184,7 @@
         <section id="stage-bottom" class="game-stage-panel">
           <div class="stage-info-bar">
             <h2>구종 암호 간파 (비밀번호 추리)</h2>
-            <p>5자리 정답 숫자를 맞혀 홈런을 노리세요! (동일 숫자 중복 없음)</p>
+            <p>4자리 정답 숫자를 맞혀 홈런을 노리세요! (동일 숫자 중복 없음)</p>
           </div>
           
           <div id="bottom-hint-container" class="bottom-hint-container" style="display: none; margin-bottom: 20px; text-align: center; width: 100%;"></div>
@@ -273,7 +273,7 @@
             <div class="admin-state-row">
               <label>새 암호 설정:</label>
               <div style="display: flex; gap: 8px; align-items: center;">
-                <input type="text" id="adm-target-code" maxlength="5" placeholder="5자리 숫자" style="width: 100px; text-align: center; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-glass); color: white; padding: 6px 12px; border-radius: 6px; font-family: 'Orbitron', sans-serif; letter-spacing: 2px;">
+                <input type="text" id="adm-target-code" maxlength="4" placeholder="4자리 숫자" style="width: 100px; text-align: center; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-glass); color: white; padding: 6px 12px; border-radius: 6px; font-family: 'Orbitron', sans-serif; letter-spacing: 2px;">
                 <button id="btn-adm-random-code" class="btn btn-secondary btn-small">랜덤 생성</button>
               </div>
             </div>
@@ -391,7 +391,7 @@
         <h3 style="color: var(--warning-color); font-size: 1.25rem; margin-bottom: 10px; border-bottom: 1px solid var(--border-glass); padding-bottom: 6px; font-family: 'Noto Sans KR', sans-serif;">⚾ 게임 소개</h3>
         <p style="margin-bottom: 15px;">
           <strong>시크릿 베이스볼</strong>은 수학적 직관과 논리적 추리를 결합한 실시간 멀티플레이어 야구 게임입니다.<br>
-          상대 투수의 <strong>5자리 비밀번호(암호)</strong>를 먼저 해독하여 <strong>홈런(5a 0b 0c)</strong>을 치는 참가자가 승리합니다!
+          상대 투수의 <strong>4자리 비밀번호(암호)</strong>를 먼저 해독하여 <strong>홈런(4a 0b 0c)</strong>을 치는 참가자가 승리합니다!
         </p>
 
         <h3 style="color: var(--warning-color); font-size: 1.25rem; margin-top: 25px; margin-bottom: 10px; border-bottom: 1px solid var(--border-glass); padding-bottom: 6px; font-family: 'Noto Sans KR', sans-serif;">🏃 경기 진행 방식</h3>
@@ -405,7 +405,7 @@
           </li>
           <li style="margin-bottom: 10px;"><strong>[말] 스테이지 (구종 암호 간파 - 타격)</strong>:
             <ul style="padding-left: 20px; list-style-type: disc; margin-top: 5px;">
-              <li>획득한 슬롯에 <strong>서로 다른 5자리 숫자</strong>를 입력하여 제출(배트 휘두르기)합니다.</li>
+              <li>획득한 슬롯에 <strong>서로 다른 4자리 숫자</strong>를 입력하여 제출(배트 휘두르기)합니다.</li>
               <li>제출 즉시 야구 판정법(스트라이크/볼/아웃)에 따라 결과가 판정됩니다.
                 <ul style="padding-left: 20px; list-style-type: circle; margin-top: 3px;">
                   <li><strong>a (Strike)</strong>: 숫자와 자릿수가 모두 일치</li>
@@ -413,7 +413,7 @@
                   <li><strong>c (Out)</strong>: 암호에 포함되지 않은 숫자</li>
                 </ul>
               </li>
-              <li><strong>5a (스트라이크 5개)</strong>를 맞히는 즉시 <strong>홈런</strong>이 되며 경기에서 최종 승리합니다!</li>
+              <li><strong>4a (스트라이크 4개)</strong>를 맞히는 즉시 <strong>홈런</strong>이 되며 경기에서 최종 승리합니다!</li>
             </ul>
           </li>
           <li style="margin-bottom: 10px;"><strong>[광고 시간] (클리닝 타임)</strong>:
@@ -434,7 +434,7 @@
         <h3 style="color: var(--warning-color); font-size: 1.25rem; margin-top: 25px; margin-bottom: 10px; border-bottom: 1px solid var(--border-glass); padding-bottom: 6px; font-family: 'Noto Sans KR', sans-serif;">💡 주요 꿀팁!</h3>
         <ul style="padding-left: 20px; list-style-type: disc;">
           <li style="margin-bottom: 6px;">우측 상단의 <strong>[기록지 열람]</strong> 버튼을 누르면 그동안 자신이 제출한 추리 기록과 획득한 모든 힌트들을 언제든 확인할 수 있습니다.</li>
-          <li style="margin-bottom: 6px;">투수 암호(비밀번호)는 <strong>0부터 9까지의 중복되지 않는 서로 다른 5자리 수</strong>로 이루어집니다.</li>
+          <li style="margin-bottom: 6px;">투수 암호(비밀번호)는 <strong>0부터 9까지의 중복되지 않는 서로 다른 4자리 수</strong>로 이루어집니다.</li>
           <li style="margin-bottom: 6px;">경기가 이미 시작되었더라도 <strong>언제든지 대기실의 빈 슬롯을 눌러 중도 참여</strong>할 수 있습니다.</li>
         </ul>
         
@@ -476,11 +476,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Flying Batter Effect -->
-  <div id="flying-batter-container" class="flying-batter-container hidden">
-    <img src="batter.png" id="flying-batter" class="flying-batter-img">
   </div>
 
   <!-- JS Implementation -->

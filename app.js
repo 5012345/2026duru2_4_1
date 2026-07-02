@@ -14,81 +14,9 @@ const firebaseConfig = {
   measurementId: "G-YC30724HMC"
 };
 
-// Initialize Firebase safely with mock fallback for offline or CDN-blocked environments
-let db;
-if (typeof firebase !== "undefined") {
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-} else {
-  console.error("Firebase SDK is not loaded. Using local mock database fallback.");
-  window.firebase = {
-    firestore: Object.assign(() => db, {
-      FieldValue: {
-        serverTimestamp: () => new Date(),
-        arrayUnion: (item) => [item]
-      }
-    })
-  };
-  db = {
-    collection: function(colName) {
-      return {
-        doc: function(docId) {
-          return {
-            get: async function() { return { exists: true, data: () => ({}) }; },
-            set: async function() { return {}; },
-            update: async function() { return {}; },
-            onSnapshot: function(callback) {
-              return () => {};
-            },
-            collection: function(subColName) {
-              return {
-                doc: function() {
-                  return {
-                    set: async function() { return {}; }
-                  };
-                },
-                get: async function() { return { docs: [] }; }
-              };
-            }
-          };
-        },
-        get: async function() { return { docs: [] }; },
-        onSnapshot: function(callback) {
-          setTimeout(() => {
-            const dummyDocs = [];
-            for (let i = 1; i <= 12; i++) {
-              dummyDocs.push({
-                data: () => ({
-                  slotId: `slot_${i}`,
-                  slotName: i <= 9 ? `${i}번 타자` : `백업선수 ${i - 9}`,
-                  nickname: "",
-                  classType: "",
-                  active: false,
-                  solvedCorrectly: false,
-                  solvedAt: null,
-                  rank: 0,
-                  lastGuessedInning: 0,
-                  hintHistory: []
-                })
-              });
-            }
-            callback(dummyDocs);
-          }, 100);
-          return () => {};
-        }
-      };
-    },
-    runTransaction: async function(fn) { return {}; },
-    batch: function() {
-      return {
-        update: function() {},
-        set: function() {},
-        delete: function() {},
-        commit: async function() {}
-      };
-    }
-  };
-}
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 // Global Constants & State
 const SLOTS_COUNT = 12;
@@ -272,10 +200,10 @@ function generateThreeProblems() {
   ];
 }
 
-// Helper to generate a 5-digit code (no repeating digits)
+// Helper to generate a 4-digit code (no repeating digits)
 function generateTargetCode() {
   const digits = [];
-  while (digits.length < 5) {
+  while (digits.length < 4) {
     const d = Math.floor(Math.random() * 10).toString();
     if (!digits.includes(d)) {
       digits.push(d);
@@ -289,7 +217,7 @@ function evaluateGuessCode(guess, target) {
   let a = 0;
   let b = 0;
   let c = 0;
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     if (guess[i] === target[i]) {
       a++;
     } else if (target.includes(guess[i])) {
@@ -306,46 +234,31 @@ function getResultString(res) {
 }
 
 function generateWeakHint(targetCode, existingHints = []) {
-  if (!targetCode || targetCode.length < 5) return "";
+  if (!targetCode || targetCode.length < 4) return "";
   
   const digits = targetCode.split("").map(Number);
   const sum = digits.reduce((x, y) => x + y, 0);
   const evens = digits.filter(n => n % 2 === 0).length;
-  const odds = 5 - evens;
+  const odds = 4 - evens;
   const max = Math.max(...digits);
   const min = Math.min(...digits);
   
-  // 3의 배수 개수 (0 제외 3, 6, 9)
-  const multiples3 = digits.filter(d => d !== 0 && d % 3 === 0).length;
-  // 5보다 큰 숫자 개수 (6, 7, 8, 9)
-  const gt5Count = digits.filter(d => d > 5).length;
-  // 5보다 작은 숫자 개수 (0, 1, 2, 3, 4)
-  const lt5Count = digits.filter(d => d < 5).length;
-
   const pool = [
-    { id: "sum_value", text: `투수 암호의 5자리 숫자의 합은 ${sum}입니다.` },
+    { id: "sum_value", text: `투수 암호의 4자리 숫자의 합은 ${sum}입니다.` },
     { id: "even_count", text: `투수 암호에 포함된 짝수의 개수는 ${evens}개입니다.` },
     { id: "min_max_diff", text: `투수 암호의 가장 큰 숫자와 가장 작은 숫자의 차이는 ${max - min}입니다.` },
-    { id: "sum_1_5", text: `투수 암호의 첫 번째 숫자와 다섯 번째 숫자의 합은 ${digits[0] + digits[4]}입니다.` },
-    { id: "sum_2_4", text: `투수 암호의 두 번째 숫자와 네 번째 숫자의 합은 ${digits[1] + digits[3]}입니다.` },
+    { id: "sum_1_4", text: `투수 암호의 첫 번째 숫자와 네 번째 숫자의 합은 ${digits[0] + digits[3]}입니다.` },
+    { id: "sum_2_3", text: `투수 암호의 두 번째 숫자와 세 번째 숫자의 합은 ${digits[1] + digits[2]}입니다.` },
     { id: "parity_1", text: `투수 암호의 첫 번째 숫자는 ${digits[0] % 2 === 0 ? '짝수' : '홀수'}입니다.` },
-    { id: "parity_5", text: `투수 암호의 다섯 번째 숫자는 ${digits[4] % 2 === 0 ? '짝수' : '홀수'}입니다.` },
+    { id: "parity_4", text: `투수 암호의 네 번째 숫자는 ${digits[3] % 2 === 0 ? '짝수' : '홀수'}입니다.` },
     { id: "odd_count", text: `투수 암호에 포함된 홀수의 개수는 ${odds}개입니다.` },
-    { id: "sum_parity", text: `투수 암호의 모든 숫자의 합은 ${sum % 2 === 0 ? '짝수' : '홀수'}입니다.` },
-    { id: "multiples_3", text: `투수 암호의 5자리 숫자 중 3의 배수의 갯수는 ${multiples3}입니다.` },
-    { id: "max_digit", text: `투수 암호의 5자리 숫자 중 가장 큰 숫자는 ${max}입니다.` },
-    { id: "min_digit", text: `투수 암호의 5자리 숫자 중 가장 작은 숫자는 ${min}입니다.` },
-    { id: "gt_5", text: `투수 암호의 5자리 숫자 중 5보다 큰 숫자의 갯수는 ${gt5Count}입니다.` },
-    { id: "lt_5", text: `투수 암호의 5자리 숫자 중 5보다 작은 숫자의 갯수는 ${lt5Count}입니다.` }
+    { id: "sum_parity", text: `투수 암호의 모든 숫자의 합은 ${sum % 2 === 0 ? '짝수' : '홀수'}입니다.` }
   ];
 
   function isRedundant(candidateId, candidateText) {
     if (existingHints.includes(candidateText)) return true;
     for (let existing of existingHints) {
-      if (candidateId === "sum_parity" && existing.startsWith("투수 암호의 5자리 숫자의 합은")) {
-        return true;
-      }
-      if (candidateId === "sum_value" && existing.startsWith("투수 암호의 모든 숫자의 합은")) {
+      if (candidateId === "sum_parity" && existing.startsWith("투수 암호의 4자리 숫자의 합은")) {
         return true;
       }
       if (candidateId === "odd_count" && existing.startsWith("투수 암호에 포함된 짝수의 개수")) {
@@ -354,25 +267,13 @@ function generateWeakHint(targetCode, existingHints = []) {
       if (candidateId === "even_count" && existing.startsWith("투수 암호에 포함된 홀수의 개수")) {
         return true;
       }
-      if (candidateId === "multiples_3" && existing.startsWith("투수 암호의 5자리 숫자 중 3의 배수의")) {
-        return true;
-      }
-      if (candidateId === "max_digit" && existing.startsWith("투수 암호의 5자리 숫자 중 가장 큰 숫자")) {
-        return true;
-      }
-      if (candidateId === "min_digit" && existing.startsWith("투수 암호의 5자리 숫자 중 가장 작은 숫자")) {
-        return true;
-      }
-      if ((candidateId === "gt_5" || candidateId === "lt_5") && existing.startsWith("투수 암호의 5자리 숫자 중 5보다")) {
-        return true;
-      }
     }
     return false;
   }
 
-  let chosenHint = "";
   const validCandidates = pool.filter(c => !isRedundant(c.id, c.text));
 
+  let chosenHint = "";
   if (validCandidates.length > 0) {
     chosenHint = validCandidates[Math.floor(Math.random() * validCandidates.length)].text;
   } else {
@@ -480,11 +381,7 @@ db.collection("players").onSnapshot(snapshot => {
               if (myPlayer.solvedCorrectly) {
                 markTopStageSolved();
               } else {
-                if (lastSetupStage !== "top" || lastSetupInning !== gameState.inning) {
-                  setupTopStage();
-                } else {
-                  updateTopStageCountdownAndProblems();
-                }
+                setupTopStage();
               }
             } else if (gameState.stage === "ad") {
               setupAdStage();
@@ -883,17 +780,11 @@ function updateTimerUI() {
   }
   
   // For ad stage visual timer in center
-  // For ad stage visual timer in center
   if (gameState.stage === "ad") {
     const visualCounter = document.getElementById("ad-countdown-visual");
     if (visualCounter) {
       visualCounter.innerText = secsTotal.toString();
     }
-  }
-
-  // Real-time synchronization of top stage countdown overlay
-  if (gameState && gameState.stage === "top") {
-    updateTopStageCountdownAndProblems();
   }
 }
 
@@ -999,66 +890,6 @@ async function autoAdvanceStage() {
  * Logic for 5s count overlay (Steal class ignores) and inputs
  * ------------------------------------------------------------- */
 
-function updateTopStageCountdownAndProblems() {
-  if (!gameState || gameState.status !== "playing" || gameState.stage !== "top") {
-    if (countdownOverlay && !countdownOverlay.classList.contains("hidden")) {
-      countdownOverlay.classList.add("hidden");
-    }
-    return;
-  }
-
-  const isStealHitter = myPlayer && myPlayer.classType === "도루형";
-  const serverTimeLeft = (gameState && typeof gameState.timeLeft !== "undefined") ? gameState.timeLeft : 60;
-  const mathProblemsContainer = document.getElementById("math-problems-container");
-
-  if (isStealHitter || serverTimeLeft <= 60) {
-    if (!countdownOverlay.classList.contains("hidden")) {
-      countdownOverlay.classList.add("hidden");
-    }
-    
-    // Render problems if not visible
-    if (mathProblemsContainer && mathProblemsContainer.style.visibility !== "visible") {
-      if (gameState.problems && gameState.problems.length === 3) {
-        document.getElementById("q1-text").innerHTML = gameState.problems[0].question;
-        document.getElementById("q2-text").innerHTML = gameState.problems[1].question;
-        document.getElementById("q3-text").innerHTML = gameState.problems[2].question;
-        triggerMathJax();
-      }
-      mathProblemsContainer.style.visibility = "visible";
-    }
-
-    if (myPlayer && !myPlayer.solvedCorrectly) {
-      ans1.disabled = false;
-      ans2.disabled = false;
-      ans3.disabled = false;
-      btnSubmitAnswers.disabled = false;
-    }
-  } else {
-    if (countdownOverlay.classList.contains("hidden")) {
-      countdownOverlay.classList.remove("hidden");
-    }
-    countdownTitle.innerText = `${gameState.inning}회 초 시작`;
-    
-    let countdownVal = serverTimeLeft - 60;
-    if (countdownVal < 0) countdownVal = 0;
-    if (countdownVal > 5) countdownVal = 5;
-    
-    countdownNumber.innerText = countdownVal;
-
-    if (mathProblemsContainer) {
-      mathProblemsContainer.style.visibility = "hidden";
-    }
-    ans1.disabled = true;
-    ans2.disabled = true;
-    ans3.disabled = true;
-    btnSubmitAnswers.disabled = true;
-  }
-
-  if (myPlayer && myPlayer.solvedCorrectly) {
-    markTopStageSolved();
-  }
-}
-
 function setupTopStage() {
   stageTopPanel.style.display = "flex";
   stageTopPanel.classList.add("active");
@@ -1082,9 +913,22 @@ function setupTopStage() {
   solveFeedback.innerText = "";
   solveFeedback.className = "feedback-msg";
 
+  // Hide the math problems container initially
   const mathProblemsContainer = document.getElementById("math-problems-container");
   if (mathProblemsContainer) {
     mathProblemsContainer.style.visibility = "hidden";
+  }
+
+  function renderProblems() {
+    if (gameState.problems && gameState.problems.length === 3) {
+      document.getElementById("q1-text").innerHTML = gameState.problems[0].question;
+      document.getElementById("q2-text").innerHTML = gameState.problems[1].question;
+      document.getElementById("q3-text").innerHTML = gameState.problems[2].question;
+      triggerMathJax();
+    }
+    if (mathProblemsContainer) {
+      mathProblemsContainer.style.visibility = "visible";
+    }
   }
 
   if (countdownInterval) {
@@ -1092,8 +936,57 @@ function setupTopStage() {
     countdownInterval = null;
   }
 
-  // Update overlay and problems driven by server time
-  updateTopStageCountdownAndProblems();
+  // 1. 도루형 타자 능력 조건문: player.classType !== '도루형'인 경우에만 5초 카운트다운 실행
+  const isStealHitter = myPlayer && myPlayer.classType === "도루형";
+  const serverTimeLeft = (gameState && typeof gameState.timeLeft !== "undefined") ? gameState.timeLeft : 60;
+  
+  if (isStealHitter || serverTimeLeft <= 60) {
+    countdownOverlay.classList.add("hidden");
+    renderProblems();
+    if (myPlayer && !myPlayer.solvedCorrectly) {
+      ans1.disabled = false;
+      ans2.disabled = false;
+      ans3.disabled = false;
+      btnSubmitAnswers.disabled = false;
+    }
+  } else {
+    // Show countdown overlay and set the remaining countdown duration
+    countdownOverlay.classList.remove("hidden");
+    countdownTitle.innerText = `${gameState.inning}회 초 시작`;
+    
+    let countdownVal = serverTimeLeft - 60;
+    if (countdownVal < 0) countdownVal = 0;
+    if (countdownVal > 5) countdownVal = 5;
+    
+    countdownNumber.innerText = countdownVal;
+
+    countdownInterval = setInterval(() => {
+      countdownVal--;
+      if (countdownVal <= 0) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+        countdownOverlay.classList.add("hidden");
+        
+        // Render problems now
+        renderProblems();
+
+        // Unlock inputs
+        if (myPlayer && !myPlayer.solvedCorrectly) {
+          ans1.disabled = false;
+          ans2.disabled = false;
+          ans3.disabled = false;
+          btnSubmitAnswers.disabled = false;
+        }
+      } else {
+        countdownNumber.innerText = countdownVal;
+      }
+    }, 1000);
+  }
+
+  // If player already solved correctly (e.g. page reloaded mid-stage)
+  if (myPlayer && myPlayer.solvedCorrectly) {
+    markTopStageSolved();
+  }
 
   lastSetupInning = gameState.inning;
   lastSetupStage = gameState.stage;
@@ -1324,7 +1217,7 @@ async function setupBottomStage() {
         if (pastGuess) {
           const guessVal = pastGuess.guess;
           const resultText = pastGuess.result;
-          const isCorrect = resultText.includes("5a");
+          const isCorrect = resultText.includes("4a");
           const feedbackClass = isCorrect ? "feedback-msg success" : "feedback-msg error";
           
           slotCard.innerHTML = `
@@ -1334,7 +1227,6 @@ async function setupBottomStage() {
               <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="1" value="${guessVal[1]}" disabled>
               <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="2" value="${guessVal[2]}" disabled>
               <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="3" value="${guessVal[3]}" disabled>
-              <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="4" value="${guessVal[4]}" disabled>
             </div>
             <button class="btn btn-secondary btn-full" disabled style="margin-top: 15px; font-size: 0.9rem; padding: 10px 16px;">제출 완료 ⚾</button>
             <div class="${feedbackClass}" style="margin-top: 10px; min-height: 20px; font-size: 0.95rem; text-align: center;">판정 결과: ${resultText}</div>
@@ -1347,7 +1239,6 @@ async function setupBottomStage() {
               <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="1">
               <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="2">
               <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="3">
-              <input type="text" maxlength="1" class="digit-box slot-${i}-digit" data-index="4">
             </div>
             <button class="btn btn-success btn-full btn-submit-slot-guess" data-slot="${i}" style="margin-top: 15px; font-size: 0.9rem; padding: 10px 16px;">배트 휘두르기 (추리 제출)</button>
             <div class="feedback-msg guess-slot-feedback" id="guess-slot-${i}-feedback" style="margin-top: 10px; min-height: 20px; font-size: 0.95rem; text-align: center;"></div>
@@ -1419,16 +1310,16 @@ function bindSlotSubmitButtons(slotCount) {
 
       const feedbackEl = document.getElementById(`guess-slot-${slotIndex}-feedback`);
       
-      if (guessVal.length < 5) {
+      if (guessVal.length < 4) {
         if (feedbackEl) {
-          feedbackEl.innerText = "5자리 숫자를 모두 입력해 주세요!";
+          feedbackEl.innerText = "4자리 숫자를 모두 입력해 주세요!";
           feedbackEl.className = "feedback-msg error";
         }
         return;
       }
       
       const uniqueDigits = new Set(guessVal);
-      if (uniqueDigits.size < 5) {
+      if (uniqueDigits.size < 4) {
         if (feedbackEl) {
           feedbackEl.innerText = "중복된 숫자가 있습니다. 서로 다른 숫자를 입력해 주세요!";
           feedbackEl.className = "feedback-msg error";
@@ -1445,7 +1336,7 @@ function bindSlotSubmitButtons(slotCount) {
       try {
         const res = evaluateGuessCode(guessVal, target);
         const resString = getResultString(res);
-        const isCorrect = res.a === 5;
+        const isCorrect = res.a === 4;
         
         const batch = db.batch();
         const newGuessRef = db.collection("players").doc(mySlotId).collection("guesses").doc();
@@ -1658,30 +1549,7 @@ function triggerVictory(winnerSlotId, winnerName) {
   if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
   if (adminTimerInterval) { clearInterval(adminTimerInterval); adminTimerInterval = null; }
   sbTimerText.innerText = "00:00";
-
-  // Hide countdown overlay immediately to prevent overlapping UI
-  countdownOverlay.classList.add("hidden");
-
-  // Show flying batter animation
-  const container = document.getElementById("flying-batter-container");
-  const batterImg = document.getElementById("flying-batter");
   
-  if (container && batterImg) {
-    container.classList.remove("hidden");
-    batterImg.classList.remove("fly-left-to-right");
-    void batterImg.offsetWidth; // trigger reflow
-    batterImg.classList.add("fly-left-to-right");
-    
-    setTimeout(() => {
-      container.classList.add("hidden");
-      showVictoryModalAndAnimation(winnerSlotId, winnerName);
-    }, 2000);
-  } else {
-    showVictoryModalAndAnimation(winnerSlotId, winnerName);
-  }
-}
-
-function showVictoryModalAndAnimation(winnerSlotId, winnerName) {
   const winner = playersList.find(p => p.slotId === winnerSlotId);
   const slotName = winner ? winner.slotName : "";
   const name = winnerName || (winner ? winner.nickname : "타자");
@@ -2096,16 +1964,16 @@ btnAdmUpdateState.addEventListener("click", async () => {
   if (codeVal === "") {
     codeVal = generateTargetCode(); // Auto-generate if empty
   } else {
-    if (codeVal.length !== 5 || isNaN(parseInt(codeVal))) {
+    if (codeVal.length !== 4 || isNaN(parseInt(codeVal))) {
       if (admErrorMsg) {
-        admErrorMsg.innerText = "비밀번호는 5자리 숫자여야 합니다.";
+        admErrorMsg.innerText = "비밀번호는 4자리 숫자여야 합니다.";
         admErrorMsg.className = "feedback-msg error";
       }
       return;
     }
     
     const uniqueCode = new Set(codeVal);
-    if (uniqueCode.size < 5) {
+    if (uniqueCode.size < 4) {
       if (admErrorMsg) {
         admErrorMsg.innerText = "비밀번호 숫자는 서로 달라야 합니다 (중복 불가).";
         admErrorMsg.className = "feedback-msg error";
