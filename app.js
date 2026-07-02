@@ -1000,11 +1000,8 @@ async function autoAdvanceStage() {
  * ------------------------------------------------------------- */
 
 function updateTopStageCountdownAndProblems() {
-  if (!gameState || gameState.stage !== "top") return;
-
-  const isAdmin = sessionStorage.getItem("adminAuth") === "true";
-  if (isAdmin) {
-    if (!countdownOverlay.classList.contains("hidden")) {
+  if (!gameState || gameState.status !== "playing" || gameState.stage !== "top") {
+    if (countdownOverlay && !countdownOverlay.classList.contains("hidden")) {
       countdownOverlay.classList.add("hidden");
     }
     return;
