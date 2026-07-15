@@ -80,13 +80,44 @@
         "eligible": true,
         "unmet": []
       }
+    },
+    {
+      "n": 5,
+      "at": "2026-07-15T06:07:04.981Z",
+      "security": {
+        "score": 65,
+        "grade": "D",
+        "eligible": false,
+        "blocking": [
+          "sec.header.csp",
+          "sec.transport.https-redirect"
+        ]
+      },
+      "edzip": {
+        "eligible": true,
+        "unmet": []
+      }
+    },
+    {
+      "n": 6,
+      "at": "2026-07-15T06:08:22.227Z",
+      "security": {
+        "score": 100,
+        "grade": "A+",
+        "eligible": true,
+        "blocking": []
+      },
+      "edzip": {
+        "eligible": true,
+        "unmet": []
+      }
     }
   ],
   "items": {
     "sec.header.csp": {
-      "status": "fail",
+      "status": "pass",
       "firstFailRound": 1,
-      "fixedRound": null,
+      "fixedRound": 6,
       "regressed": false
     },
     "sec.header.hsts": {
@@ -96,27 +127,27 @@
       "regressed": false
     },
     "sec.header.frame": {
-      "status": "fail",
+      "status": "pass",
       "firstFailRound": 1,
-      "fixedRound": null,
+      "fixedRound": 6,
       "regressed": false
     },
     "sec.header.nosniff": {
-      "status": "fail",
+      "status": "pass",
       "firstFailRound": 1,
-      "fixedRound": null,
+      "fixedRound": 6,
       "regressed": false
     },
     "sec.header.referrer": {
-      "status": "fail",
+      "status": "pass",
       "firstFailRound": 1,
-      "fixedRound": null,
+      "fixedRound": 6,
       "regressed": false
     },
     "sec.header.permissions": {
-      "status": "fail",
+      "status": "pass",
       "firstFailRound": 1,
-      "fixedRound": null,
+      "fixedRound": 6,
       "regressed": false
     },
     "sec.fingerprint.powered-by": {
@@ -126,9 +157,9 @@
       "regressed": false
     },
     "sec.transport.https-redirect": {
-      "status": "fail",
+      "status": "pass",
       "firstFailRound": 1,
-      "fixedRound": null,
+      "fixedRound": 6,
       "regressed": false
     },
     "sec.transport.ssl-valid": {
@@ -157,8 +188,8 @@
     },
     "info.config-exposed": {
       "status": "pass",
-      "firstFailRound": null,
-      "fixedRound": null,
+      "firstFailRound": 5,
+      "fixedRound": 6,
       "regressed": false
     },
     "info.source-map": {
@@ -192,9 +223,9 @@
       "regressed": false
     },
     "seo.description": {
-      "status": "fail",
+      "status": "pass",
       "firstFailRound": 1,
-      "fixedRound": null,
+      "fixedRound": 5,
       "regressed": false
     },
     "seo.viewport": {
@@ -204,9 +235,9 @@
       "regressed": false
     },
     "seo.og": {
-      "status": "fail",
+      "status": "pass",
       "firstFailRound": 1,
-      "fixedRound": null,
+      "fixedRound": 5,
       "regressed": false
     },
     "seo.canonical": {

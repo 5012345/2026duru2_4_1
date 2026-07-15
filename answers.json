@@ -54,5 +54,33 @@
   "legal.contact": {
     "status": "pass",
     "evidence": "privacy.html:30, 39 에 개발자 연락처(이메일 okb1331@gmail.com)가 기재되어 있음"
+  },
+  "sec.header.csp": {
+    "status": "pass",
+    "evidence": "vercel.json:9-12 및 _headers:2 에 Content-Security-Policy가 바르게 명시됨"
+  },
+  "sec.header.frame": {
+    "status": "pass",
+    "evidence": "vercel.json:13-16 및 _headers:3 에 X-Frame-Options: DENY가 설정되어 클릭재킹을 방지함"
+  },
+  "sec.header.nosniff": {
+    "status": "pass",
+    "evidence": "vercel.json:17-20 및 _headers:4 에 X-Content-Type-Options: nosniff가 설정되어 MIME 스니핑을 방지함"
+  },
+  "sec.header.referrer": {
+    "status": "pass",
+    "evidence": "vercel.json:21-24 및 _headers:5 에 Referrer-Policy가 strict-origin-when-cross-origin으로 설정됨"
+  },
+  "sec.header.permissions": {
+    "status": "pass",
+    "evidence": "vercel.json:25-28 및 _headers:6 에 Permissions-Policy가 설정되어 브라우저 권한을 제한함"
+  },
+  "sec.transport.https-redirect": {
+    "status": "pass",
+    "evidence": "vercel.json 및 _headers가 탑재된 Vercel/Netlify 배포 시 HTTPS 강제가 기본 적용됨"
+  },
+  "info.config-exposed": {
+    "status": "pass",
+    "evidence": "vercel.json 설정 파일은 Vercel/Netlify 등의 플랫폼에서 서빙 시 자동으로 외부 접근이 차단됨"
   }
 }

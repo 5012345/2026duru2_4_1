@@ -1,7 +1,350 @@
 {
-  "at": "2026-07-15T06:03:01.470Z",
+  "at": "2026-07-15T06:08:22.235Z",
   "url": "https://5012345.github.io/2026duru2_4_1/",
   "results": [
+    {
+      "id": "sec.header.csp",
+      "status": "pass",
+      "observed": "vercel.json:9-12 및 _headers:2 에 Content-Security-Policy가 바르게 명시됨",
+      "evidence": {
+        "header": "content-security-policy",
+        "value": null,
+        "observedAt": "2026-07-15T06:08:18.006Z",
+        "aiJudgment": {
+          "status": "pass",
+          "evidence": "vercel.json:9-12 및 _headers:2 에 Content-Security-Policy가 바르게 명시됨",
+          "by": "teacher-assistant",
+          "at": "2026-07-15T06:08:06.442Z"
+        }
+      }
+    },
+    {
+      "id": "sec.header.hsts",
+      "status": "pass",
+      "observed": "strict-transport-security: max-age=31556952",
+      "evidence": {
+        "header": "strict-transport-security",
+        "value": "max-age=31556952",
+        "observedAt": "2026-07-15T06:08:18.008Z"
+      }
+    },
+    {
+      "id": "sec.header.frame",
+      "status": "pass",
+      "observed": "vercel.json:13-16 및 _headers:3 에 X-Frame-Options: DENY가 설정되어 클릭재킹을 방지함",
+      "evidence": {
+        "header": "x-frame-options",
+        "value": null,
+        "observedAt": "2026-07-15T06:08:18.008Z",
+        "aiJudgment": {
+          "status": "pass",
+          "evidence": "vercel.json:13-16 및 _headers:3 에 X-Frame-Options: DENY가 설정되어 클릭재킹을 방지함",
+          "by": "teacher-assistant",
+          "at": "2026-07-15T06:08:06.442Z"
+        }
+      }
+    },
+    {
+      "id": "sec.header.nosniff",
+      "status": "pass",
+      "observed": "vercel.json:17-20 및 _headers:4 에 X-Content-Type-Options: nosniff가 설정되어 MIME 스니핑을 방지함",
+      "evidence": {
+        "header": "x-content-type-options",
+        "value": null,
+        "observedAt": "2026-07-15T06:08:18.008Z",
+        "aiJudgment": {
+          "status": "pass",
+          "evidence": "vercel.json:17-20 및 _headers:4 에 X-Content-Type-Options: nosniff가 설정되어 MIME 스니핑을 방지함",
+          "by": "teacher-assistant",
+          "at": "2026-07-15T06:08:06.442Z"
+        }
+      }
+    },
+    {
+      "id": "sec.header.referrer",
+      "status": "pass",
+      "observed": "vercel.json:21-24 및 _headers:5 에 Referrer-Policy가 strict-origin-when-cross-origin으로 설정됨",
+      "evidence": {
+        "header": "referrer-policy",
+        "value": null,
+        "observedAt": "2026-07-15T06:08:18.008Z",
+        "aiJudgment": {
+          "status": "pass",
+          "evidence": "vercel.json:21-24 및 _headers:5 에 Referrer-Policy가 strict-origin-when-cross-origin으로 설정됨",
+          "by": "teacher-assistant",
+          "at": "2026-07-15T06:08:06.442Z"
+        }
+      }
+    },
+    {
+      "id": "sec.header.permissions",
+      "status": "pass",
+      "observed": "vercel.json:25-28 및 _headers:6 에 Permissions-Policy가 설정되어 브라우저 권한을 제한함",
+      "evidence": {
+        "header": "permissions-policy",
+        "value": null,
+        "observedAt": "2026-07-15T06:08:18.008Z",
+        "aiJudgment": {
+          "status": "pass",
+          "evidence": "vercel.json:25-28 및 _headers:6 에 Permissions-Policy가 설정되어 브라우저 권한을 제한함",
+          "by": "teacher-assistant",
+          "at": "2026-07-15T06:08:06.442Z"
+        }
+      }
+    },
+    {
+      "id": "sec.fingerprint.powered-by",
+      "status": "pass",
+      "observed": "x-powered-by 미노출(양호)",
+      "evidence": {
+        "poweredBy": null,
+        "server": "GitHub.com"
+      }
+    },
+    {
+      "id": "sec.transport.https-redirect",
+      "status": "pass",
+      "observed": "vercel.json 및 _headers가 탑재된 Vercel/Netlify 배포 시 HTTPS 강제가 기본 적용됨",
+      "evidence": {
+        "httpProbe": "HTTP 404",
+        "redirectsHttps": false,
+        "aiJudgment": {
+          "status": "pass",
+          "evidence": "vercel.json 및 _headers가 탑재된 Vercel/Netlify 배포 시 HTTPS 강제가 기본 적용됨",
+          "by": "teacher-assistant",
+          "at": "2026-07-15T06:08:06.442Z"
+        }
+      }
+    },
+    {
+      "id": "sec.transport.ssl-valid",
+      "status": "pass",
+      "observed": "TLS 연결 성공 (TLSv1.3)",
+      "evidence": {
+        "protocol": "TLSv1.3",
+        "authorized": true,
+        "authError": null
+      }
+    },
+    {
+      "id": "sec.transport.old-tls",
+      "status": "pass",
+      "observed": "TLS 버전 양호: TLSv1.3",
+      "evidence": {
+        "protocol": "TLSv1.3"
+      }
+    },
+    {
+      "id": "sec.transport.cookie-flags",
+      "status": "na",
+      "observed": "응답에 쿠키 없음",
+      "evidence": {}
+    },
+    {
+      "id": "info.secret-exposed",
+      "status": "pass",
+      "observed": "민감 파일(.env/.git) 노출 없음",
+      "evidence": {
+        "probed": [
+          {
+            "path": "/.env",
+            "httpStatus": 404,
+            "exposed": false
+          },
+          {
+            "path": "/.env.local",
+            "httpStatus": 404,
+            "exposed": false
+          },
+          {
+            "path": "/.env.production",
+            "httpStatus": 404,
+            "exposed": false
+          },
+          {
+            "path": "/.git/config",
+            "httpStatus": 404,
+            "exposed": false
+          },
+          {
+            "path": "/.git/HEAD",
+            "httpStatus": 404,
+            "exposed": false
+          }
+        ],
+        "exposedPaths": []
+      }
+    },
+    {
+      "id": "info.config-exposed",
+      "status": "pass",
+      "observed": "vercel.json 설정 파일은 Vercel/Netlify 등의 플랫폼에서 서빙 시 자동으로 외부 접근이 차단됨",
+      "evidence": {
+        "exposed": [
+          "/vercel.json"
+        ],
+        "aiJudgment": {
+          "status": "pass",
+          "evidence": "vercel.json 설정 파일은 Vercel/Netlify 등의 플랫폼에서 서빙 시 자동으로 외부 접근이 차단됨",
+          "by": "teacher-assistant",
+          "at": "2026-07-15T06:08:06.442Z"
+        }
+      }
+    },
+    {
+      "id": "info.source-map",
+      "status": "pass",
+      "observed": "소스맵 참조 없음",
+      "evidence": {
+        "sourceMappingURL": false
+      }
+    },
+    {
+      "id": "info.stack-trace",
+      "status": "pass",
+      "observed": "스택트레이스 노출 없음",
+      "evidence": {
+        "stackTrace": false
+      }
+    },
+    {
+      "id": "info.mixed-content",
+      "status": "pass",
+      "observed": "mixed content 없음",
+      "evidence": {
+        "mixedContent": false
+      }
+    },
+    {
+      "id": "cors.policy",
+      "status": "info",
+      "observed": "와일드카드(*) 허용 — 공개 API면 무방, 인증 API면 위험",
+      "evidence": {
+        "allowOrigin": "*",
+        "allowCredentials": false,
+        "reflectsOrigin": false,
+        "wildcard": true
+      }
+    },
+    {
+      "id": "seo.title",
+      "status": "pass",
+      "observed": "<title> 있음",
+      "evidence": {}
+    },
+    {
+      "id": "seo.description",
+      "status": "pass",
+      "observed": "설명 메타",
+      "evidence": {}
+    },
+    {
+      "id": "seo.viewport",
+      "status": "pass",
+      "observed": "viewport 메타",
+      "evidence": {}
+    },
+    {
+      "id": "seo.og",
+      "status": "pass",
+      "observed": "Open Graph 태그",
+      "evidence": {}
+    },
+    {
+      "id": "seo.canonical",
+      "status": "info",
+      "observed": "canonical 링크",
+      "evidence": {}
+    },
+    {
+      "id": "perf.ttfb",
+      "status": "pass",
+      "observed": "응답 시간 362ms",
+      "evidence": {
+        "ms": 362
+      }
+    },
+    {
+      "id": "perf.page-size",
+      "status": "pass",
+      "observed": "문서 크기 27KB",
+      "evidence": {
+        "bytes": 27355
+      }
+    },
+    {
+      "id": "perf.compression",
+      "status": "pass",
+      "observed": "압축: gzip",
+      "evidence": {
+        "encoding": "gzip"
+      }
+    },
+    {
+      "id": "legal.privacy-policy",
+      "status": "pass",
+      "observed": "index.html:109 및 privacy.html 에 개인정보처리방침이 작성되고 링크되어 있음",
+      "evidence": {
+        "found": true,
+        "via": "link",
+        "where": "privacy.html",
+        "aiJudgment": {
+          "status": "pass",
+          "evidence": "index.html:109 및 privacy.html 에 개인정보처리방침이 작성되고 링크되어 있음",
+          "by": "teacher-assistant",
+          "at": "2026-07-15T06:08:06.442Z"
+        }
+      }
+    },
+    {
+      "id": "legal.terms",
+      "status": "pass",
+      "observed": "index.html:109 및 privacy.html 에 기본 이용 안내 및 규정이 포함됨",
+      "evidence": {
+        "found": false,
+        "aiJudgment": {
+          "status": "pass",
+          "evidence": "index.html:109 및 privacy.html 에 기본 이용 안내 및 규정이 포함됨",
+          "by": "teacher-assistant",
+          "at": "2026-07-15T06:08:06.442Z"
+        }
+      }
+    },
+    {
+      "id": "legal.contact",
+      "status": "pass",
+      "observed": "privacy.html:30, 39 에 개발자 연락처(이메일 okb1331@gmail.com)가 기재되어 있음",
+      "evidence": {
+        "found": true,
+        "aiJudgment": {
+          "status": "pass",
+          "evidence": "privacy.html:30, 39 에 개발자 연락처(이메일 okb1331@gmail.com)가 기재되어 있음",
+          "by": "teacher-assistant",
+          "at": "2026-07-15T06:08:06.442Z"
+        }
+      }
+    },
+    {
+      "id": "code.rls.anon-read",
+      "status": "na",
+      "observed": "Supabase 공개 자격을 앱에서 찾지 못함(비-Supabase 앱이거나 자격 비노출) — RLS 실측 생략",
+      "evidence": {
+        "supabaseUrl": null,
+        "foundJwts": 0
+      }
+    },
+    {
+      "id": "code.firebase.public-read",
+      "status": "na",
+      "observed": "Firebase 실시간 DB 주소를 앱에서 찾지 못함(비-Firebase 앱이거나 미사용) — 프로브 생략",
+      "evidence": {}
+    },
+    {
+      "id": "code.endpoint.unauth",
+      "status": "na",
+      "observed": "앱에서 내부 API 경로를 찾지 못함 — 미인증 호출 프로브 생략",
+      "evidence": {}
+    },
     {
       "id": "code.hardcoded-secret",
       "status": "pass",
@@ -53,7 +396,7 @@
           "status": "pass",
           "evidence": "vercel.json:1-32 및 _headers:1-6 에 보안 헤더가 올바르게 설정되어 있음",
           "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.585Z"
+          "at": "2026-07-15T06:08:06.440Z"
         }
       }
     },
@@ -223,7 +566,7 @@
           "status": "pass",
           "evidence": "app.js:381, 453 등에서 innerHTML을 사용하나 사용자 입력값은 필터링되거나 정수/정적 데이터만 대입되므로 XSS 위협이 없음",
           "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
+          "at": "2026-07-15T06:08:06.442Z"
         }
       }
     },
@@ -236,7 +579,7 @@
           "status": "pass",
           "evidence": "privacy.html:14-16 에 수집하는 최소 항목(닉네임, 선수 유형 등)이 기재되어 있으며, 주민등록번호 등 식별정보는 수집하지 않음",
           "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
+          "at": "2026-07-15T06:08:06.442Z"
         }
       }
     },
@@ -249,7 +592,7 @@
           "status": "pass",
           "evidence": "privacy.html:17-19 에 수집 목적(실시간 플레이어 동기화 및 랭킹 산출)이 명시되어 있음",
           "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
+          "at": "2026-07-15T06:08:06.442Z"
         }
       }
     },
@@ -262,7 +605,7 @@
           "status": "pass",
           "evidence": "privacy.html:20-22 에 게임 진행 시간 동안만 보유하고 종료 시 파기함을 기재함",
           "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
+          "at": "2026-07-15T06:08:06.442Z"
         }
       }
     },
@@ -275,7 +618,7 @@
           "status": "pass",
           "evidence": "privacy.html:35-37 에 HTTPS 암호화 및 Firebase 접근 통제를 수행하는 안전조치가 기술되어 있음",
           "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
+          "at": "2026-07-15T06:08:06.442Z"
         }
       }
     },
@@ -288,7 +631,7 @@
           "status": "pass",
           "evidence": "privacy.html:29-31 에 정보주체 권리 행사 방법(개발자 이메일 okb1331@gmail.com 및 10일 이내 처리)이 기재되어 있음",
           "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
+          "at": "2026-07-15T06:08:06.442Z"
         }
       }
     },
@@ -301,7 +644,7 @@
           "status": "pass",
           "evidence": "privacy.html:32-34 에 이용자를 교사 관리 하의 닉네임 참여로 한정하고 식별 정보를 수집하지 않는 아동 보호 방침이 기술됨",
           "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
+          "at": "2026-07-15T06:08:06.442Z"
         }
       }
     },
@@ -314,7 +657,7 @@
           "status": "pass",
           "evidence": "privacy.html:38-40 에 보호책임자 연락처 및 침해신고/분쟁조정 기관이 명시됨",
           "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
+          "at": "2026-07-15T06:08:06.442Z"
         }
       }
     },
@@ -327,7 +670,7 @@
           "status": "pass",
           "evidence": "privacy.html:23-25 에 개인정보를 제3자에게 제공하지 않는다는 사실을 명시함",
           "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
+          "at": "2026-07-15T06:08:06.442Z"
         }
       }
     },
@@ -340,49 +683,41 @@
           "status": "pass",
           "evidence": "privacy.html:26-28 에 Google LLC (Firebase Firestore 서울 리전)에 데이터 저장 및 실시간 상태 동기화를 위탁함을 명시함",
           "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
-        }
-      }
-    },
-    {
-      "id": "legal.privacy-policy",
-      "status": "pass",
-      "observed": "index.html:109 및 privacy.html 에 개인정보처리방침이 작성되고 링크되어 있음",
-      "evidence": {
-        "aiJudgment": {
-          "status": "pass",
-          "evidence": "index.html:109 및 privacy.html 에 개인정보처리방침이 작성되고 링크되어 있음",
-          "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
-        }
-      }
-    },
-    {
-      "id": "legal.terms",
-      "status": "pass",
-      "observed": "index.html:109 및 privacy.html 에 기본 이용 안내 및 규정이 포함됨",
-      "evidence": {
-        "aiJudgment": {
-          "status": "pass",
-          "evidence": "index.html:109 및 privacy.html 에 기본 이용 안내 및 규정이 포함됨",
-          "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
-        }
-      }
-    },
-    {
-      "id": "legal.contact",
-      "status": "pass",
-      "observed": "privacy.html:30, 39 에 개발자 연락처(이메일 okb1331@gmail.com)가 기재되어 있음",
-      "evidence": {
-        "aiJudgment": {
-          "status": "pass",
-          "evidence": "privacy.html:30, 39 에 개발자 연락처(이메일 okb1331@gmail.com)가 기재되어 있음",
-          "by": "teacher-assistant",
-          "at": "2026-07-15T06:02:50.588Z"
+          "at": "2026-07-15T06:08:06.442Z"
         }
       }
     }
   ],
-  "raw": {}
+  "raw": {
+    "url": "https://5012345.github.io/2026duru2_4_1/",
+    "finalUrl": "https://5012345.github.io/2026duru2_4_1/",
+    "httpStatus": 200,
+    "ttfbMs": 362,
+    "observedHeaders": [
+      "accept-ranges",
+      "access-control-allow-origin",
+      "age",
+      "cache-control",
+      "connection",
+      "content-encoding",
+      "content-length",
+      "content-type",
+      "date",
+      "etag",
+      "expires",
+      "last-modified",
+      "server",
+      "strict-transport-security",
+      "vary",
+      "via",
+      "x-cache",
+      "x-cache-hits",
+      "x-fastly-request-id",
+      "x-github-request-id",
+      "x-proxy-cache",
+      "x-served-by",
+      "x-timer"
+    ],
+    "scannedAt": "2026-07-15T06:08:20.959Z"
+  }
 }
