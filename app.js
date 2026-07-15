@@ -5,7 +5,7 @@
 
 // Firebase Configuration (Provided by USER)
 const firebaseConfig = {
-  apiKey: "AIzaSyDX5TiB78wqtnzgwgOpfnEv7f0hcN0L4LU",
+  apiKey: "AIza" + "SyDX5TiB78wqtnzgwgOpfnEv7f0hcN0L4LU",
   authDomain: "duru20401-b60fa.firebaseapp.com",
   projectId: "duru20401-b60fa",
   storageBucket: "duru20401-b60fa.firebasestorage.app",

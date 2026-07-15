@@ -1,0 +1,16 @@
+{
+  "app": {
+    "name": "Secret Baseball",
+    "url": "https://5012345.github.io/2026duru2_4_1/",
+    "stack": "정적 HTML"
+  },
+  "tracks": [
+    "security",
+    "edzip"
+  ],
+  "edzipCase": "D",
+  "teacher": {
+    "dormsHandle": ""
+  },
+  "ownershipConfirmed": true
+}
